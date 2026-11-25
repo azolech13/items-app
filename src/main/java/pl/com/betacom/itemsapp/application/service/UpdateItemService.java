@@ -18,6 +18,8 @@ import pl.com.betacom.itemsapp.domain.ItemNotFoundException;
 import pl.com.betacom.itemsapp.domain.ItemRole;
 import pl.com.betacom.itemsapp.domain.ItemVersionConflictException;
 
+import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.EDIT_EX_MSG;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -54,14 +56,13 @@ class UpdateItemService implements UpdateItem {
 
     private void checkRole(Item item, UUID userId) {
         if (!isOwnerOrEditor(item, userId)) {
-            throw new ItemAccessDeniedException();
+            throw new ItemAccessDeniedException(EDIT_EX_MSG);
         }
     }
 
     @NonNull
     private Item getItem(UpdateItemCommand command) {
         return itemRepository.findById(command.id())
-                .filter(found -> !found.deleted())
                 .orElseThrow(() -> new ItemNotFoundException(command.id()));
     }
 

@@ -11,6 +11,8 @@ public interface ItemRepository {
 
     Item update(Item item);
 
+    void delete(Item item);
+
     Optional<Item> findById(UUID id);
 
     List<Item> findActiveByOwner(UUID ownerId);

@@ -6,14 +6,17 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pl.com.betacom.itemsapp.application.port.in.CreateItem;
+import pl.com.betacom.itemsapp.application.port.in.DeleteItem;
 import pl.com.betacom.itemsapp.application.port.in.CreateItemCommand;
 import pl.com.betacom.itemsapp.application.port.in.FetchItem;
 import pl.com.betacom.itemsapp.application.port.in.FetchItems;
@@ -22,31 +25,39 @@ import pl.com.betacom.itemsapp.application.port.in.UpdateItemCommand;
 import pl.com.betacom.itemsapp.domain.Item;
 
 @RestController
+@RequestMapping("/items")
 @RequiredArgsConstructor
 class ItemRestController {
 
     private final CreateItem createItem;
     private final FetchItems fetchItems;
     private final UpdateItem updateItem;
+    private final DeleteItem deleteItem;
 
-    @PostMapping("/items")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     ItemResponse create(@Valid @RequestBody ItemRequest request) {
         Item item = createItem.create(new CreateItemCommand(request.title(), request.content()));
         return createItemResponse(item);
     }
 
-    @PatchMapping("/items/{id}")
+    @GetMapping
+    List<ItemListResponse> list() {
+        return fetchItems.fetch().stream()
+                .map(ItemRestController::toListResponse)
+                .toList();
+    }
+
+    @PatchMapping("/{id}")
     UpdateItemResponse update(@PathVariable UUID id, @Valid @RequestBody UpdateItemRequest request) {
         Item item = updateItem.update(new UpdateItemCommand(id, request.title(), request.content(), request.version()));
         return toUpdateResponse(item);
     }
 
-    @GetMapping("/items")
-    List<ItemListResponse> list() {
-        return fetchItems.fetch().stream()
-                .map(ItemRestController::toListResponse)
-                .toList();
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void delete(@PathVariable UUID id) {
+        deleteItem.delete(id);
     }
 
     @NonNull

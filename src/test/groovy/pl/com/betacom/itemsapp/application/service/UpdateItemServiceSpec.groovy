@@ -12,8 +12,6 @@ import pl.com.betacom.itemsapp.domain.ItemRole
 import pl.com.betacom.itemsapp.domain.ItemVersionConflictException
 import spock.lang.Specification
 
-import static pl.com.betacom.itemsapp.ItemTestConstants.CONTENT
-import static pl.com.betacom.itemsapp.ItemTestConstants.CREATED_AT
 import static pl.com.betacom.itemsapp.ItemTestConstants.ITEM_ID
 import static pl.com.betacom.itemsapp.ItemTestConstants.SHARED_OWNER_ID
 import static pl.com.betacom.itemsapp.ItemTestConstants.TITLE
@@ -93,20 +91,6 @@ class UpdateItemServiceSpec extends Specification {
         then:
         1 * currentUserProvider.id() >> ID
         1 * itemRepository.findById(ITEM_ID) >> Optional.empty()
-        0 * itemPermissionRepository.findRole(_, _)
-        thrown(ItemNotFoundException)
-    }
-
-    def "rejects a deleted item"() {
-        given:
-        def deleted = new Item(ITEM_ID, ID, TITLE, CONTENT, 0, true, CREATED_AT, CREATED_AT)
-
-        when:
-        service.update(updateItemCommand())
-
-        then:
-        1 * currentUserProvider.id() >> ID
-        1 * itemRepository.findById(ITEM_ID) >> Optional.of(deleted)
         0 * itemPermissionRepository.findRole(_, _)
         thrown(ItemNotFoundException)
     }

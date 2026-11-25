@@ -39,8 +39,17 @@ class ItemRepositoryAdapter implements ItemRepository {
     }
 
     @Override
+    public void delete(Item item) {
+        ItemEntity current = itemsRepository.findById(item.id())
+                .orElseThrow(() -> new ItemNotFoundException(item.id()));
+        current.setDeleted(item.deleted());
+        current.setUpdatedAt(item.updatedAt());
+    }
+
+    @Override
     public Optional<Item> findById(UUID id) {
-        return itemsRepository.findById(id).map(ItemRepositoryAdapter::toDomain);
+        return itemsRepository.findByIdAndDeleted(id, false)
+                .map(ItemRepositoryAdapter::toDomain);
     }
 
     @Override

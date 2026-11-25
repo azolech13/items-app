@@ -39,6 +39,7 @@ class ItemEntity {
     @Version
     private Integer version;
 
+    @Setter
     private boolean deleted;
 
     @NonNull

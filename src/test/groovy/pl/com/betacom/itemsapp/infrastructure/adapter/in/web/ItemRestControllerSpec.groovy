@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import pl.com.betacom.itemsapp.application.port.in.CreateItem
+import pl.com.betacom.itemsapp.application.port.in.DeleteItem
 import pl.com.betacom.itemsapp.application.port.in.FetchItems
 import pl.com.betacom.itemsapp.application.port.in.UpdateItem
 import pl.com.betacom.itemsapp.application.port.in.UpdateItemCommand
@@ -20,11 +21,12 @@ import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityConfig
 import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityFiltersConfiguration
 import spock.lang.Specification
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import static org.hamcrest.Matchers.nullValue
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import static pl.com.betacom.itemsapp.ItemTestConstants.CONTENT
@@ -41,6 +43,8 @@ import static pl.com.betacom.itemsapp.ItemTestConstants.fetchItem
 import static pl.com.betacom.itemsapp.ItemTestConstants.item
 import static pl.com.betacom.itemsapp.ItemTestConstants.updateItemCommand
 import static pl.com.betacom.itemsapp.UserTestConstants.ID
+import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.DELETE_EX_MSG
+import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.EDIT_EX_MSG
 
 @WebMvcTest(controllers = ItemRestController)
 @Import([SecurityConfig, ApiExceptionHandler, SecurityFiltersConfiguration])
@@ -61,6 +65,9 @@ class ItemRestControllerSpec extends Specification {
 
     @SpringBean
     UpdateItem updateItem = Mock()
+
+    @SpringBean
+    DeleteItem deleteItem = Mock()
 
     def "creates an item for the authenticated user"() {
         when:
@@ -210,7 +217,7 @@ class ItemRestControllerSpec extends Specification {
                 .content(UPDATE_ITEM_BODY))
 
         then:
-        1 * updateItem.update(updateItemCommand()) >> { throw new ItemAccessDeniedException() }
+        1 * updateItem.update(updateItemCommand()) >> { throw new ItemAccessDeniedException(EDIT_EX_MSG) }
         result.andExpect(status().isForbidden())
     }
 
@@ -238,6 +245,45 @@ class ItemRestControllerSpec extends Specification {
         result.andExpect(status().isConflict())
                 .andExpect(jsonPath('$.version').value(2))
                 .andExpect(jsonPath('$.detail').value(String.format(ItemVersionConflictException.EX_MSG, 2)))
+    }
+
+    def "deletes an item for the owner"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * deleteItem.delete(ITEM_ID)
+        result.andExpect(status().isNoContent())
+    }
+
+    def "rejects anonymous delete"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID"))
+
+        then:
+        0 * deleteItem.delete(_)
+        result.andExpect(status().isUnauthorized())
+    }
+
+    def "rejects a delete without ownership"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * deleteItem.delete(ITEM_ID) >> { throw new ItemAccessDeniedException(DELETE_EX_MSG) }
+        result.andExpect(status().isForbidden())
+    }
+
+    def "rejects a delete of a missing item"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * deleteItem.delete(ITEM_ID) >> { throw new ItemNotFoundException(ITEM_ID) }
+        result.andExpect(status().isNotFound())
     }
 
     def "lists items for the authenticated user"() {

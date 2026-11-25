@@ -61,6 +61,21 @@ class ItemRepositoryAdapterSpec extends Specification {
         saved.version() == 1
     }
 
+    def "marks the stored item deleted"() {
+        given:
+        def entity = new ItemEntity(ITEM_ID, ID, TITLE, CONTENT, 0, false, CREATED_AT, CREATED_AT)
+        def deleted = new Item(ITEM_ID, ID, TITLE, CONTENT, 0, true, CREATED_AT, UPDATED_AT)
+
+        when:
+        adapter.delete(deleted)
+
+        then:
+        1 * items.findById(ITEM_ID) >> Optional.of(entity)
+        0 * items.saveAndFlush(_)
+        entity.deleted
+        entity.updatedAt == UPDATED_AT
+    }
+
     def "translates an optimistic lock failure into a version conflict"() {
         given:
         def entity = new ItemEntity(ITEM_ID, ID, TITLE, CONTENT, 0, false, CREATED_AT, CREATED_AT)
@@ -80,8 +95,17 @@ class ItemRepositoryAdapterSpec extends Specification {
         def found = adapter.findById(ITEM_ID)
 
         then:
-        1 * items.findById(ITEM_ID) >> Optional.of(new ItemEntity(ITEM_ID, ID, TITLE, CONTENT, 0, false, CREATED_AT, CREATED_AT))
+        1 * items.findByIdAndDeleted(ITEM_ID, false) >> Optional.of(new ItemEntity(ITEM_ID, ID, TITLE, CONTENT, 0, false, CREATED_AT, CREATED_AT))
         found == Optional.of(item())
+    }
+
+    def "returns empty when no active item exists"() {
+        when:
+        def found = adapter.findById(ITEM_ID)
+
+        then:
+        1 * items.findByIdAndDeleted(ITEM_ID, false) >> Optional.empty()
+        found == Optional.empty()
     }
 
     def "maps owned entities to items"() {

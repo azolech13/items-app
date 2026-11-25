@@ -28,4 +28,8 @@ Content-Type: application/json
 
 {"title":"Moja pierwsza notatka","content":"Treść notatki...", "version":1}
 
+### DELETE example delete item request
+DELETE http://localhost:8080/items/{{itemId}}
+Authorization: Bearer  {{token}}
+
 ###

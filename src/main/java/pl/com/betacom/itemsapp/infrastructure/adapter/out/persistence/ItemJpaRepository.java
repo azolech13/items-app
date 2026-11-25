@@ -1,12 +1,15 @@
 package pl.com.betacom.itemsapp.infrastructure.adapter.out.persistence;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 interface ItemJpaRepository extends JpaRepository<ItemEntity, UUID> {
+
+    Optional<ItemEntity> findByIdAndDeleted(UUID id, boolean deleted);
 
     @Query("""
             select i from ItemEntity i
