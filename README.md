@@ -65,6 +65,16 @@ gradlew.bat bootRun --args="--spring.profiles.active=local"
 
 Bez aktywnego profilu aplikacja nie ma adresu JDBC. `local` wskazuje `localhost`, `docker` wskazuje host `mysql` w sieci Compose.
 
+### Testy integracyjne
+
+Potrzebny jest działający Docker.
+
+```bash
+gradlew.bat integrationTest
+```
+
+Zadanie buduje JAR, stawia MySQL 8.4 i uruchamia ten JAR w kontenerze. Sprawdza historię Enversa przez `GET /items/{id}/history` oraz limit logowania: szóste `POST /login` z jednego adresu zwraca `429` i nagłówek `Retry-After`. `gradlew.bat test` zostawia te testy i odpala tylko jednostkowe.
+
 ## API
 
 `POST /register` jest publiczny. Body to JSON z polami `login` (3–64 znaki) i `password` (minimum 8 znaków). Hasło w bazie leży jako hash bcrypt. Odpowiedź `201` zawiera `id`, `login` i `createdAt`. Zajęty login zwraca `409`, niepoprawne pola `400`.
