@@ -31,6 +31,11 @@ class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
+    public boolean existsById(UUID id) {
+        return users.existsById(id);
+    }
+
+    @Override
     public boolean existsByLogin(String login) {
         return users.existsByLogin(login);
     }

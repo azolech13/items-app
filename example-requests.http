@@ -36,4 +36,11 @@ Authorization: Bearer  {{token}}
 GET http://localhost:8080/items/{{itemId}}/history
 Authorization: Bearer {{token}}
 
+### POST example share item request
+POST http://localhost:8080/items/{{itemId}}/share
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"userId":"99990000-aaaa-bbbb-cccc-ddddeeee1111","role":"EDITOR"}
+
 ###

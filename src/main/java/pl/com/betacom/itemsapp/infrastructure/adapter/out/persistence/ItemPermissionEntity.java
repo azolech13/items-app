@@ -5,11 +5,13 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.lang.NonNull;
 
 @Entity
@@ -29,7 +31,15 @@ class ItemPermissionEntity {
     @NonNull
     private UUID userId;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     @NonNull
     private ItemPermissionRole role;
+
+    @NonNull
+    private Instant createdAt;
+
+    @Setter
+    @NonNull
+    private Instant updatedAt;
 }

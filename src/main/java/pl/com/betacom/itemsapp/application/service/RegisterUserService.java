@@ -21,12 +21,16 @@ class RegisterUserService implements RegisterUser {
     @Override
     @Transactional
     public User register(RegisterUserCommand command) {
+        checkLoginIsTaken(command);
+        User saved = userRepository.save(registerUserMapper.toUser(command));
+        log.info("Registered user {} with id {}", saved.login(), saved.id());
+        return saved;
+    }
+
+    private void checkLoginIsTaken(RegisterUserCommand command) {
         if (userRepository.existsByLogin(command.login())) {
             log.warn("Registration rejected, login already taken: {}", command.login());
             throw new LoginTakenException(command.login());
         }
-        User saved = userRepository.save(registerUserMapper.toUser(command));
-        log.info("Registered user {} with id {}", saved.login(), saved.id());
-        return saved;
     }
 }

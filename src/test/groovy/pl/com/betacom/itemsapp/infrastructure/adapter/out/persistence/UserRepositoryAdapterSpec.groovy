@@ -24,6 +24,15 @@ class UserRepositoryAdapterSpec extends Specification {
         found == user()
     }
 
+    def "checks whether a user exists"() {
+        when:
+        def exists = adapter.existsById(ID)
+
+        then:
+        1 * users.existsById(ID) >> false
+        !exists
+    }
+
     def "fails when the user does not exist"() {
         when:
         adapter.findById(ID)

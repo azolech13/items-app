@@ -16,10 +16,8 @@ import pl.com.betacom.itemsapp.application.port.out.ItemRepository;
 import pl.com.betacom.itemsapp.application.port.out.ItemRevision;
 import pl.com.betacom.itemsapp.application.port.out.UserRepository;
 import pl.com.betacom.itemsapp.domain.Item;
-import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException;
+import pl.com.betacom.itemsapp.domain.ItemHistoryDeniedException;
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException;
-
-import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.HISTORY_EX_MSG;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +62,7 @@ class FetchItemHistoryService implements FetchItemHistory {
             return;
         }
         if (hasNoRoleForItem(item, userId)) {
-            throw new ItemAccessDeniedException(HISTORY_EX_MSG);
+            throw new ItemHistoryDeniedException();
         }
     }
 

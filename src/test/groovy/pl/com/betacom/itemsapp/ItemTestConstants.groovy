@@ -23,6 +23,8 @@ class ItemTestConstants {
     static final String SHARED_CONTENT = "Cudza treść"
     static final Instant CREATED_AT = Instant.parse("2025-06-01T10:05:00Z")
     static final Instant UPDATED_AT = Instant.parse("2025-06-01T12:00:00Z")
+    static final Instant GRANTED_AT = Instant.parse("2025-06-01T13:00:00Z")
+    static final UUID PERMISSION_ID = UUID.fromString("11111111-2222-3333-4444-555555555555")
     static final Instant SHARED_UPDATED_AT = CREATED_AT.plusSeconds(3600)
     static final int SHARED_VERSION = 1
     static final String CREATE_ITEM_BODY = '{"title":"' + TITLE + '","content":"' + CONTENT + '"}'

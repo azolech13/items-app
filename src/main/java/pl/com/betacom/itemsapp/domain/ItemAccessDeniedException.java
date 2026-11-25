@@ -1,12 +1,9 @@
 package pl.com.betacom.itemsapp.domain;
 
-public class ItemAccessDeniedException extends RuntimeException {
+public abstract sealed class ItemAccessDeniedException extends RuntimeException
+        permits ItemEditDeniedException, ItemDeleteDeniedException, ItemHistoryDeniedException, ItemShareDeniedException {
 
-    public static final String EDIT_EX_MSG = "No permission to edit this item";
-    public static final String DELETE_EX_MSG = "No permission to delete this item";
-    public static final String HISTORY_EX_MSG = "No permission to read this item";
-
-    public ItemAccessDeniedException(String message) {
+    protected ItemAccessDeniedException(String message) {
         super(message);
     }
 }

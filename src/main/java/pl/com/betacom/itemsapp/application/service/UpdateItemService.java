@@ -13,12 +13,10 @@ import pl.com.betacom.itemsapp.application.port.out.CurrentUserProvider;
 import pl.com.betacom.itemsapp.application.port.out.ItemPermissionRepository;
 import pl.com.betacom.itemsapp.application.port.out.ItemRepository;
 import pl.com.betacom.itemsapp.domain.Item;
-import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException;
+import pl.com.betacom.itemsapp.domain.ItemEditDeniedException;
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException;
 import pl.com.betacom.itemsapp.domain.ItemRole;
 import pl.com.betacom.itemsapp.domain.ItemVersionConflictException;
-
-import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.EDIT_EX_MSG;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +40,7 @@ class UpdateItemService implements UpdateItem {
         return saved;
     }
 
-    private static void checkConflict(UpdateItemCommand command, Item item) {
+    private void checkConflict(UpdateItemCommand command, Item item) {
         if (!Objects.equals(item.version(), command.version())) {
             throw new ItemVersionConflictException(item.version());
         }
@@ -56,7 +54,7 @@ class UpdateItemService implements UpdateItem {
 
     private void checkRole(Item item, UUID userId) {
         if (!isOwnerOrEditor(item, userId)) {
-            throw new ItemAccessDeniedException(EDIT_EX_MSG);
+            throw new ItemEditDeniedException();
         }
     }
 

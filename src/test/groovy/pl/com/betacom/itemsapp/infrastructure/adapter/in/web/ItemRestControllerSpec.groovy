@@ -16,9 +16,11 @@ import pl.com.betacom.itemsapp.application.port.in.ItemHistory
 import pl.com.betacom.itemsapp.application.port.in.UpdateItem
 import pl.com.betacom.itemsapp.application.port.in.UpdateItemCommand
 import pl.com.betacom.itemsapp.domain.Item
-import pl.com.betacom.itemsapp.domain.ItemRevisionType
-import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException
+import pl.com.betacom.itemsapp.domain.ItemDeleteDeniedException
+import pl.com.betacom.itemsapp.domain.ItemEditDeniedException
+import pl.com.betacom.itemsapp.domain.ItemHistoryDeniedException
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException
+import pl.com.betacom.itemsapp.domain.ItemRevisionType
 import pl.com.betacom.itemsapp.domain.ItemVersionConflictException
 import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityConfig
 import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityFiltersConfiguration
@@ -47,9 +49,6 @@ import static pl.com.betacom.itemsapp.ItemTestConstants.item
 import static pl.com.betacom.itemsapp.ItemTestConstants.updateItemCommand
 import static pl.com.betacom.itemsapp.UserTestConstants.ID
 import static pl.com.betacom.itemsapp.UserTestConstants.LOGIN
-import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.DELETE_EX_MSG
-import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.HISTORY_EX_MSG
-import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.EDIT_EX_MSG
 
 @WebMvcTest(controllers = ItemRestController)
 @Import([SecurityConfig, ApiExceptionHandler, SecurityFiltersConfiguration])
@@ -225,7 +224,7 @@ class ItemRestControllerSpec extends Specification {
                 .content(UPDATE_ITEM_BODY))
 
         then:
-        1 * updateItem.update(updateItemCommand()) >> { throw new ItemAccessDeniedException(EDIT_EX_MSG) }
+        1 * updateItem.update(updateItemCommand()) >> { throw new ItemEditDeniedException() }
         result.andExpect(status().isForbidden())
     }
 
@@ -251,7 +250,6 @@ class ItemRestControllerSpec extends Specification {
         then:
         1 * updateItem.update(updateItemCommand()) >> { throw new ItemVersionConflictException(2) }
         result.andExpect(status().isConflict())
-                .andExpect(jsonPath('$.version').value(2))
                 .andExpect(jsonPath('$.detail').value(String.format(ItemVersionConflictException.EX_MSG, 2)))
     }
 
@@ -280,7 +278,7 @@ class ItemRestControllerSpec extends Specification {
                 .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
 
         then:
-        1 * deleteItem.delete(ITEM_ID) >> { throw new ItemAccessDeniedException(DELETE_EX_MSG) }
+        1 * deleteItem.delete(ITEM_ID) >> { throw new ItemDeleteDeniedException() }
         result.andExpect(status().isForbidden())
     }
 
@@ -347,7 +345,7 @@ class ItemRestControllerSpec extends Specification {
                 .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
 
         then:
-        1 * fetchItemHistory.fetch(ITEM_ID) >> { throw new ItemAccessDeniedException(HISTORY_EX_MSG) }
+        1 * fetchItemHistory.fetch(ITEM_ID) >> { throw new ItemHistoryDeniedException() }
         result.andExpect(status().isForbidden())
     }
 

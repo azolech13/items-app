@@ -3,7 +3,7 @@ package pl.com.betacom.itemsapp.application.service
 import pl.com.betacom.itemsapp.application.port.out.CurrentUserProvider
 import pl.com.betacom.itemsapp.application.port.out.ItemRepository
 import pl.com.betacom.itemsapp.domain.Item
-import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException
+import pl.com.betacom.itemsapp.domain.ItemDeleteDeniedException
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException
 import spock.lang.Specification
 
@@ -47,8 +47,8 @@ class DeleteItemServiceSpec extends Specification {
         1 * itemRepository.findById(ITEM_ID) >> Optional.of(item())
         0 * deleteItemMapper.apply(_)
         0 * itemRepository.delete(_)
-        def denied = thrown(ItemAccessDeniedException)
-        denied.message == ItemAccessDeniedException.DELETE_EX_MSG
+        def denied = thrown(ItemDeleteDeniedException)
+        denied.message == ItemDeleteDeniedException.EX_MSG
     }
 
     def "rejects a missing item"() {

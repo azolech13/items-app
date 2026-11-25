@@ -8,9 +8,11 @@ import org.springframework.data.repository.query.Param;
 
 interface ItemPermissionJpaRepository extends JpaRepository<ItemPermissionEntity, UUID> {
 
+    Optional<ItemPermissionEntity> findByItemIdAndUserId(UUID itemId, UUID userId);
+
     @Query("""
             select p.role from ItemPermissionEntity p
             where p.itemId = :itemId and p.userId = :userId
             """)
-    Optional<ItemPermissionRole> findByItemIdAndUserId(@Param("itemId") UUID itemId, @Param("userId") UUID userId);
+    Optional<ItemPermissionRole> findRoleByItemIdAndUserId(@Param("itemId") UUID itemId, @Param("userId") UUID userId);
 }

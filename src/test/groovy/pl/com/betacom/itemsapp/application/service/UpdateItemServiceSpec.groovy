@@ -6,7 +6,7 @@ import pl.com.betacom.itemsapp.application.port.out.DateTimeProvider
 import pl.com.betacom.itemsapp.application.port.out.ItemPermissionRepository
 import pl.com.betacom.itemsapp.application.port.out.ItemRepository
 import pl.com.betacom.itemsapp.domain.Item
-import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException
+import pl.com.betacom.itemsapp.domain.ItemEditDeniedException
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException
 import pl.com.betacom.itemsapp.domain.ItemRole
 import pl.com.betacom.itemsapp.domain.ItemVersionConflictException
@@ -78,7 +78,7 @@ class UpdateItemServiceSpec extends Specification {
         1 * itemPermissionRepository.findRole(ITEM_ID, SHARED_OWNER_ID) >> granted
         0 * updateItemMapper.apply(_, _)
         0 * itemRepository.update(_)
-        thrown(ItemAccessDeniedException)
+        thrown(ItemEditDeniedException)
 
         where:
         granted << [Optional.of(ItemRole.VIEWER), Optional.empty()]
@@ -104,7 +104,7 @@ class UpdateItemServiceSpec extends Specification {
         1 * itemRepository.findById(ITEM_ID) >> Optional.of(item())
         0 * itemRepository.update(_)
         def conflict = thrown(ItemVersionConflictException)
-        conflict.currentVersion() == 0
+        conflict.message == String.format(ItemVersionConflictException.EX_MSG, 0)
     }
 
     def "saves a cleared content and the existing title"() {

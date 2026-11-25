@@ -10,6 +10,8 @@ public interface UserRepository {
 
     @NonNull User findById(UUID id);
 
+    boolean existsById(UUID id);
+
     boolean existsByLogin(String login);
 
     Optional<User> findByLogin(String login);

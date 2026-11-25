@@ -1,6 +1,6 @@
 package pl.com.betacom.itemsapp.domain;
 
-public class LoginTakenException extends RuntimeException {
+public final class LoginTakenException extends ConflictException {
 
     public static final String EX_MSG = "Login %s is already taken";
 

@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-item-permission-timestamps
+      author: items-app
+      logicalFilePath: db/changeset/004-add-item-permission-timestamps.yml
+      changes:
+        - addColumn:
+            tableName: item_permissions
+            columns:
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false

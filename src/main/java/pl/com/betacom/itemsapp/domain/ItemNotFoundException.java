@@ -2,7 +2,7 @@ package pl.com.betacom.itemsapp.domain;
 
 import java.util.UUID;
 
-public class ItemNotFoundException extends RuntimeException {
+public final class ItemNotFoundException extends NotFoundException {
 
     public static final String EX_MSG = "Item %s was not found";
 

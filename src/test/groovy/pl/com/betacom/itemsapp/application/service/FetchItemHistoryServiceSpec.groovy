@@ -8,7 +8,7 @@ import pl.com.betacom.itemsapp.application.port.out.ItemRepository
 import pl.com.betacom.itemsapp.application.port.out.ItemRevision
 import pl.com.betacom.itemsapp.application.port.out.UserRepository
 import pl.com.betacom.itemsapp.domain.Item
-import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException
+import pl.com.betacom.itemsapp.domain.ItemHistoryDeniedException
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException
 import pl.com.betacom.itemsapp.domain.ItemRevisionType
 import pl.com.betacom.itemsapp.domain.ItemRole
@@ -28,7 +28,7 @@ import static pl.com.betacom.itemsapp.UserTestConstants.ID
 import static pl.com.betacom.itemsapp.UserTestConstants.LOGIN
 import static pl.com.betacom.itemsapp.UserTestConstants.PASSWORD_HASH
 import static pl.com.betacom.itemsapp.UserTestConstants.user
-import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.HISTORY_EX_MSG
+import static pl.com.betacom.itemsapp.domain.ItemHistoryDeniedException.EX_MSG
 
 class FetchItemHistoryServiceSpec extends Specification {
 
@@ -104,8 +104,8 @@ class FetchItemHistoryServiceSpec extends Specification {
         1 * itemRepository.findIncludingDeleted(ITEM_ID) >> Optional.of(item())
         1 * itemPermissionRepository.findRole(ITEM_ID, SHARED_OWNER_ID) >> Optional.empty()
         0 * itemHistoryRepository.findByItemId(_)
-        def denied = thrown(ItemAccessDeniedException)
-        denied.message == HISTORY_EX_MSG
+        def denied = thrown(ItemHistoryDeniedException)
+        denied.message == EX_MSG
     }
 
     def "rejects a missing item"() {

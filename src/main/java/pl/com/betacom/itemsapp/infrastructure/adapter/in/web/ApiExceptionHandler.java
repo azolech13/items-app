@@ -5,11 +5,11 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pl.com.betacom.itemsapp.domain.ConflictException;
 import pl.com.betacom.itemsapp.domain.InvalidCredentialsException;
 import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException;
-import pl.com.betacom.itemsapp.domain.ItemNotFoundException;
-import pl.com.betacom.itemsapp.domain.ItemVersionConflictException;
-import pl.com.betacom.itemsapp.domain.LoginTakenException;
+import pl.com.betacom.itemsapp.domain.NotFoundException;
+import pl.com.betacom.itemsapp.domain.SelfShareException;
 
 @RestControllerAdvice
 class ApiExceptionHandler {
@@ -27,8 +27,8 @@ class ApiExceptionHandler {
         return problem;
     }
 
-    @ExceptionHandler(LoginTakenException.class)
-    ProblemDetail loginTaken(LoginTakenException exception) {
+    @ExceptionHandler(ConflictException.class)
+    ProblemDetail conflict(ConflictException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
     }
 
@@ -37,20 +37,18 @@ class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 
-    @ExceptionHandler(ItemNotFoundException.class)
-    ProblemDetail itemNotFound(ItemNotFoundException exception) {
+    @ExceptionHandler(NotFoundException.class)
+    ProblemDetail notFound(NotFoundException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(SelfShareException.class)
+    ProblemDetail selfShare(SelfShareException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
     @ExceptionHandler(ItemAccessDeniedException.class)
     ProblemDetail itemAccessDenied(ItemAccessDeniedException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
-    }
-
-    @ExceptionHandler(ItemVersionConflictException.class)
-    ProblemDetail itemVersionConflict(ItemVersionConflictException exception) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
-        problem.setProperty("version", exception.currentVersion());
-        return problem;
     }
 }

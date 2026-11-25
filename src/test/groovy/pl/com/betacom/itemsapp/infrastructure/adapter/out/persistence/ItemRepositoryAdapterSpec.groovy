@@ -87,7 +87,7 @@ class ItemRepositoryAdapterSpec extends Specification {
         1 * items.findById(ITEM_ID) >> Optional.of(entity)
         1 * items.saveAndFlush(entity) >> { throw new OptimisticLockingFailureException("stale") }
         def conflict = thrown(ItemVersionConflictException)
-        conflict.currentVersion() == 0
+        conflict.message == String.format(ItemVersionConflictException.EX_MSG, 0)
     }
 
     def "maps an entity found by id"() {

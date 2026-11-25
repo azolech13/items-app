@@ -8,3 +8,6 @@ databaseChangeLog:
   - include:
       file: db/changeset/003-create-item-permissions.yml
       relativeToChangelogFile: false
+  - include:
+      file: db/changeset/004-add-item-permission-timestamps.yml
+      relativeToChangelogFile: false

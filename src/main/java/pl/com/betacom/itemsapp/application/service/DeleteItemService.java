@@ -10,10 +10,8 @@ import pl.com.betacom.itemsapp.application.port.in.DeleteItem;
 import pl.com.betacom.itemsapp.application.port.out.CurrentUserProvider;
 import pl.com.betacom.itemsapp.application.port.out.ItemRepository;
 import pl.com.betacom.itemsapp.domain.Item;
-import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException;
+import pl.com.betacom.itemsapp.domain.ItemDeleteDeniedException;
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException;
-
-import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.DELETE_EX_MSG;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +34,7 @@ class DeleteItemService implements DeleteItem {
 
     private void checkIsOwner(UUID userId, Item item) {
         if (!userId.equals(item.ownerId())) {
-            throw new ItemAccessDeniedException(DELETE_EX_MSG);
+            throw new ItemDeleteDeniedException();
         }
     }
 
