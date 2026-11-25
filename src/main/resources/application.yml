@@ -1,0 +1,16 @@
+# Wspólna konfiguracja. Adres bazy zależy od profilu:
+# local  – localhost, odpalanie z IDE trzeba uruchomić recznie kontener dockerowy
+# docker – host mysql, ustawia go Compose (SPRING_PROFILES_ACTIVE=docker)
+spring:
+  application:
+    name: items-app
+  datasource:
+    username: items
+    # Hasło deweloperskie, tylko na potrzeby zadania.
+    # W produkcji nie trzymamy go w repozytorium: leży w vaulcie
+    # i jest podstawiane przy starcie (zmienna środowiskowa albo Spring Cloud Vault).
+    password: items
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
