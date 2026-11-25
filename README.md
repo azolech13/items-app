@@ -81,6 +81,8 @@ Bez aktywnego profilu aplikacja nie ma adresu JDBC. `local` wskazuje `localhost`
 
 `POST /items/{id}/share` wymaga tego samego nagłówka. Body to `userId` i `role` (`VIEWER` albo `EDITOR`). Nadawać dostęp może tylko właściciel. Nowa zgoda zwraca `201`, zmiana istniejącej roli `200`. Odpowiedź ma `itemId`, `userId`, `role` i `grantedAt`, a `grantedAt` jest czasem ostatniej zmiany zgody. Nadanie roli samemu sobie to `400`, zła rola albo brak pola też `400`, brak albo zły token to `401`, inny użytkownik to `403`, brak notatki albo brak użytkownika to `404`.
 
+`DELETE /items/{id}/share/{userId}` wymaga tego samego nagłówka. Cofa dostęp wskazanemu użytkownikowi. Może to zrobić tylko właściciel. Odpowiedź `204` nie ma treści. Brak albo zły token to `401`, inny użytkownik to `403`, brak albo usunięta notatka oraz brak nadanego dostępu to `404`.
+
 `GET /items/{id}/history` wymaga tego samego nagłówka. Zwraca `200` i rewizje Enversa od najstarszej. Element ma `revision`, `revisionType` (`ADD`, `MOD`, `DEL`), `timestamp`, `changedBy` (login autora zmiany), `title` i `content`. Miękkie usunięcie jest rewizją `DEL`. Czytać może właściciel oraz użytkownik z rolą `VIEWER` albo `EDITOR`, także gdy notatka jest już usunięta. Pusta lista to `[]`. Brak albo zły token to `401`, brak dostępu to `403`, brak notatki to `404`. 
 
 Przykładowe requesty są w `example-requests.http`. Da się je uruchomić lokalnie na `http://localhost:8080`, gdy aplikacja już działa: cały Compose albo profil `local`. Token z logowania wstawia się w żądanie tworzenia notatki.

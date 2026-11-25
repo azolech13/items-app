@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import pl.com.betacom.itemsapp.application.port.out.ItemPermissionRepository;
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException;
 import pl.com.betacom.itemsapp.domain.ItemPermission;
+import pl.com.betacom.itemsapp.domain.ItemPermissionNotFoundException;
 import pl.com.betacom.itemsapp.domain.ItemRole;
 
 @Component
@@ -39,6 +40,13 @@ class ItemPermissionRepositoryAdapter implements ItemPermissionRepository {
         current.setRole(ItemPermissionRole.valueOf(permission.role().name()));
         current.setUpdatedAt(permission.updatedAt());
         return toDomain(permissionsRepository.saveAndFlush(current));
+    }
+
+    @Override
+    public void delete(ItemPermission permission) {
+        ItemPermissionEntity current = permissionsRepository.findByItemIdAndUserId(permission.itemId(), permission.userId())
+                .orElseThrow(() -> new ItemPermissionNotFoundException(permission.itemId(), permission.userId()));
+        permissionsRepository.delete(current);
     }
 
     private static ItemPermissionEntity toEntity(ItemPermission permission) {

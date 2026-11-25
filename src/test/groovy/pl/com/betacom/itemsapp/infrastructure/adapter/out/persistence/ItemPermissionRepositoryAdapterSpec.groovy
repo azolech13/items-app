@@ -1,6 +1,7 @@
 package pl.com.betacom.itemsapp.infrastructure.adapter.out.persistence
 
 import pl.com.betacom.itemsapp.domain.ItemPermission
+import pl.com.betacom.itemsapp.domain.ItemPermissionNotFoundException
 import pl.com.betacom.itemsapp.domain.ItemRole
 import spock.lang.Specification
 
@@ -57,5 +58,32 @@ class ItemPermissionRepositoryAdapterSpec extends Specification {
         stored.createdAt == CREATED_AT
         saved.role() == ItemRole.EDITOR
         saved.updatedAt() == GRANTED_AT
+    }
+
+    def "deletes the stored permission"() {
+        given:
+        def stored = new ItemPermissionEntity(PERMISSION_ID, ITEM_ID, SHARED_OWNER_ID, ItemPermissionRole.EDITOR, CREATED_AT, GRANTED_AT)
+        def permission = new ItemPermission(PERMISSION_ID, ITEM_ID, SHARED_OWNER_ID, ItemRole.EDITOR, CREATED_AT, GRANTED_AT)
+
+        when:
+        adapter.delete(permission)
+
+        then:
+        1 * permissions.findByItemIdAndUserId(ITEM_ID, SHARED_OWNER_ID) >> Optional.of(stored)
+        1 * permissions.delete(stored)
+    }
+
+    def "fails when the permission is already gone"() {
+        given:
+        def permission = new ItemPermission(PERMISSION_ID, ITEM_ID, SHARED_OWNER_ID, ItemRole.EDITOR, CREATED_AT, GRANTED_AT)
+
+        when:
+        adapter.delete(permission)
+
+        then:
+        1 * permissions.findByItemIdAndUserId(ITEM_ID, SHARED_OWNER_ID) >> Optional.empty()
+        0 * permissions.delete(_)
+        def missing = thrown(ItemPermissionNotFoundException)
+        missing.message == String.format(ItemPermissionNotFoundException.EX_MSG, SHARED_OWNER_ID, ITEM_ID)
     }
 }

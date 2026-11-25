@@ -1,7 +1,7 @@
 package pl.com.betacom.itemsapp.domain;
 
 public abstract sealed class NotFoundException extends RuntimeException
-        permits ItemNotFoundException, UserNotFoundException {
+        permits ItemNotFoundException, UserNotFoundException, ItemPermissionNotFoundException {
 
     protected NotFoundException(String message) {
         super(message);

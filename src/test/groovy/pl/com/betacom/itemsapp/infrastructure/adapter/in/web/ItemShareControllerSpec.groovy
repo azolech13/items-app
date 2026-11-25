@@ -8,10 +8,14 @@ import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
+import pl.com.betacom.itemsapp.application.port.in.DeleteItemShare
+import pl.com.betacom.itemsapp.application.port.in.DeleteItemShareCommand
 import pl.com.betacom.itemsapp.application.port.in.ShareItem
 import pl.com.betacom.itemsapp.application.port.in.ShareItemCommand
 import pl.com.betacom.itemsapp.application.port.in.ShareResult
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException
+import pl.com.betacom.itemsapp.domain.ItemPermissionNotFoundException
+import pl.com.betacom.itemsapp.domain.ItemRevokeDeniedException
 import pl.com.betacom.itemsapp.domain.ItemRole
 import pl.com.betacom.itemsapp.domain.ItemShareDeniedException
 import pl.com.betacom.itemsapp.domain.SelfShareException
@@ -21,6 +25,7 @@ import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityFilter
 import spock.lang.Specification
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -44,6 +49,9 @@ class ItemShareControllerSpec extends Specification {
 
     @SpringBean
     ShareItem shareItem = Mock()
+
+    @SpringBean
+    DeleteItemShare deleteItemShare = Mock()
 
     def "creates a grant"() {
         when:
@@ -154,6 +162,55 @@ class ItemShareControllerSpec extends Specification {
 
         then:
         1 * shareItem.share(_) >> { throw new UserNotFoundException(SHARED_OWNER_ID) }
+        result.andExpect(status().isNotFound())
+    }
+
+    def "revokes a grant"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID/share/$SHARED_OWNER_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * deleteItemShare.delete(new DeleteItemShareCommand(ITEM_ID, SHARED_OWNER_ID))
+        result.andExpect(status().isNoContent())
+    }
+
+    def "rejects anonymous revoke"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID/share/$SHARED_OWNER_ID"))
+
+        then:
+        0 * deleteItemShare.delete(_)
+        result.andExpect(status().isUnauthorized())
+    }
+
+    def "rejects a revoke from a user who is not the owner"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID/share/$SHARED_OWNER_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * deleteItemShare.delete(_) >> { throw new ItemRevokeDeniedException() }
+        result.andExpect(status().isForbidden())
+    }
+
+    def "rejects a revoke of a missing item"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID/share/$SHARED_OWNER_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * deleteItemShare.delete(_) >> { throw new ItemNotFoundException(ITEM_ID) }
+        result.andExpect(status().isNotFound())
+    }
+
+    def "rejects a revoke when the user has no grant"() {
+        when:
+        def result = mockMvc.perform(delete("/items/$ITEM_ID/share/$SHARED_OWNER_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * deleteItemShare.delete(_) >> { throw new ItemPermissionNotFoundException(ITEM_ID, SHARED_OWNER_ID) }
         result.andExpect(status().isNotFound())
     }
 

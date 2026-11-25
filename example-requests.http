@@ -43,4 +43,6 @@ Content-Type: application/json
 
 {"userId":"99990000-aaaa-bbbb-cccc-ddddeeee1111","role":"EDITOR"}
 
-###
+### DELETE example revoke share request
+DELETE http://localhost:8080/items/{{itemId}}/share/{{userId}}}}
+Authorization: Bearer {{token}}

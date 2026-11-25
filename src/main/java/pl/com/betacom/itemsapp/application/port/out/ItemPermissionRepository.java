@@ -14,4 +14,6 @@ public interface ItemPermissionRepository {
     ItemPermission insert(ItemPermission permission);
 
     ItemPermission update(ItemPermission permission);
+
+    void delete(ItemPermission permission);
 }
