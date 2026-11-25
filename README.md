@@ -65,4 +65,10 @@ gradlew.bat bootRun --args="--spring.profiles.active=local"
 
 Bez aktywnego profilu aplikacja nie ma adresu JDBC. `local` wskazuje `localhost`, `docker` wskazuje host `mysql` w sieci Compose.
 
+## API
+
+`POST /register` jest publiczny. Body to JSON z polami `login` (3–64 znaki) i `password` (minimum 8 znaków). Hasło w bazie leży jako hash bcrypt. Odpowiedź `201` zawiera `id`, `login` i `createdAt`. Zajęty login zwraca `409`, niepoprawne pola `400`.
+
+Przykładowy request jest w `example-requests.http`. Da się go uruchomić lokalnie na `http://localhost:8080`, gdy aplikacja już działa: cały Compose albo profil `local`.
+
 

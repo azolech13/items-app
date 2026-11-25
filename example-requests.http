@@ -1,0 +1,7 @@
+### POST example register request
+POST http://localhost:8080/register
+Content-Type: application/json
+
+{"login":"jan.kowalski","password":"password1"}
+
+###
