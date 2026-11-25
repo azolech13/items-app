@@ -1,6 +1,9 @@
 package pl.com.betacom.itemsapp.infrastructure.adapter.out.persistence;
 
 import java.util.Optional;
+import java.util.UUID;
+
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,7 +17,18 @@ import pl.com.betacom.itemsapp.domain.User;
 @Slf4j
 class UserRepositoryAdapter implements UserRepository {
 
+    public static final String NOT_FOUND = "User %s was not found";
+
     private final UserJpaRepository users;
+
+
+    @NonNull
+    @Override
+    public User findById(UUID id) {
+        return users.findById(id)
+                .map(UserRepositoryAdapter::toDomain)
+                .orElseThrow(() -> new IllegalStateException(NOT_FOUND.formatted(id)));
+    }
 
     @Override
     public boolean existsByLogin(String login) {

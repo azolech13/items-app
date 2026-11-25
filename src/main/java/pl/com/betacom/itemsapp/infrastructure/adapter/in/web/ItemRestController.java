@@ -19,7 +19,9 @@ import pl.com.betacom.itemsapp.application.port.in.CreateItem;
 import pl.com.betacom.itemsapp.application.port.in.DeleteItem;
 import pl.com.betacom.itemsapp.application.port.in.CreateItemCommand;
 import pl.com.betacom.itemsapp.application.port.in.FetchItem;
+import pl.com.betacom.itemsapp.application.port.in.FetchItemHistory;
 import pl.com.betacom.itemsapp.application.port.in.FetchItems;
+import pl.com.betacom.itemsapp.application.port.in.ItemHistory;
 import pl.com.betacom.itemsapp.application.port.in.UpdateItem;
 import pl.com.betacom.itemsapp.application.port.in.UpdateItemCommand;
 import pl.com.betacom.itemsapp.domain.Item;
@@ -31,6 +33,7 @@ class ItemRestController {
 
     private final CreateItem createItem;
     private final FetchItems fetchItems;
+    private final FetchItemHistory fetchItemHistory;
     private final UpdateItem updateItem;
     private final DeleteItem deleteItem;
 
@@ -39,6 +42,13 @@ class ItemRestController {
     ItemResponse create(@Valid @RequestBody ItemRequest request) {
         Item item = createItem.create(new CreateItemCommand(request.title(), request.content()));
         return createItemResponse(item);
+    }
+
+    @GetMapping("/{id}/history")
+    List<ItemHistoryResponse> history(@PathVariable UUID id) {
+        return fetchItemHistory.fetch(id).stream()
+                .map(ItemRestController::toHistoryResponse)
+                .toList();
     }
 
     @GetMapping
@@ -75,6 +85,17 @@ class ItemRestController {
     @NonNull
     private static UpdateItemResponse toUpdateResponse(Item item) {
         return new UpdateItemResponse(item.id(), item.title(), item.content(), item.version(), item.updatedAt());
+    }
+
+    @NonNull
+    private static ItemHistoryResponse toHistoryResponse(ItemHistory revision) {
+        return new ItemHistoryResponse(
+                revision.revision(),
+                revision.revisionType(),
+                revision.timestamp(),
+                revision.changedBy(),
+                revision.title(),
+                revision.content());
     }
 
     @NonNull

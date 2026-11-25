@@ -77,7 +77,9 @@ Bez aktywnego profilu aplikacja nie ma adresu JDBC. `local` wskazuje `localhost`
 
 `PATCH /items/{id}` wymaga tego samego nagłówka. Body ma wymagane `version`. Brak `title` zostawia dotychczasowy tytuł. `content` zapisuje się tak, jak przyszedł, także jako `null`, gdy pola nie ma. Edytować może właściciel i użytkownik z rolą `EDITOR`. Odpowiedź `200` zawiera `id`, `title`, `content`, `version` i `updatedAt`. Brak `version` albo złe pole to `400`, brak albo zły token to `401`, `VIEWER` albo obcy użytkownik to `403`, brak albo usunięta notatka to `404`. Niezgodna wersja to `409`, a w treści jest aktualna `version`.
 
-`DELETE /items/{id}` wymaga tego samego nagłówka. Usuwa notatkę miękko: `deleted` staje się `true` i notatka znika z listy. Może to zrobić tylko właściciel. Odpowiedź `204` nie ma treści. Brak albo zły token to `401`, inny użytkownik to `403`, brak albo już usunięta notatka to `404`. 
+`DELETE /items/{id}` wymaga tego samego nagłówka. Usuwa notatkę miękko: `deleted` staje się `true` i notatka znika z listy. Może to zrobić tylko właściciel. Odpowiedź `204` nie ma treści. Brak albo zły token to `401`, inny użytkownik to `403`, brak albo już usunięta notatka to `404`.
+
+`GET /items/{id}/history` wymaga tego samego nagłówka. Zwraca `200` i rewizje Enversa od najstarszej. Element ma `revision`, `revisionType` (`ADD`, `MOD`, `DEL`), `timestamp`, `changedBy` (login autora zmiany), `title` i `content`. Miękkie usunięcie jest rewizją `DEL`. Czytać może właściciel oraz użytkownik z rolą `VIEWER` albo `EDITOR`, także gdy notatka jest już usunięta. Pusta lista to `[]`. Brak albo zły token to `401`, brak dostępu to `403`, brak notatki to `404`. 
 
 Przykładowe requesty są w `example-requests.http`. Da się je uruchomić lokalnie na `http://localhost:8080`, gdy aplikacja już działa: cały Compose albo profil `local`. Token z logowania wstawia się w żądanie tworzenia notatki.
 

@@ -99,6 +99,16 @@ class ItemRepositoryAdapterSpec extends Specification {
         found == Optional.of(item())
     }
 
+    def "maps an item found by id including a deleted one"() {
+        when:
+        def found = adapter.findIncludingDeleted(ITEM_ID)
+
+        then:
+        1 * items.findById(ITEM_ID) >> Optional.of(new ItemEntity(ITEM_ID, ID, TITLE, CONTENT, 1, true, CREATED_AT, UPDATED_AT))
+        found.get().deleted()
+        found.get().id() == ITEM_ID
+    }
+
     def "returns empty when no active item exists"() {
         when:
         def found = adapter.findById(ITEM_ID)

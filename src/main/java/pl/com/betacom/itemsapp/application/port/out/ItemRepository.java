@@ -15,6 +15,8 @@ public interface ItemRepository {
 
     Optional<Item> findById(UUID id);
 
+    Optional<Item> findIncludingDeleted(UUID id);
+
     List<Item> findActiveByOwner(UUID ownerId);
 
     List<GrantedItem> findActiveGranted(UUID userId);

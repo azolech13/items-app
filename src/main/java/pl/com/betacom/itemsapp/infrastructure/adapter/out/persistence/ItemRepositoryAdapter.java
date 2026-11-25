@@ -53,6 +53,12 @@ class ItemRepositoryAdapter implements ItemRepository {
     }
 
     @Override
+    public Optional<Item> findIncludingDeleted(UUID id) {
+        return itemsRepository.findById(id)
+                .map(ItemRepositoryAdapter::toDomain);
+    }
+
+    @Override
     public List<Item> findActiveByOwner(UUID ownerId) {
         return itemsRepository.findActiveByOwner(ownerId).stream()
                 .map(ItemRepositoryAdapter::toDomain)

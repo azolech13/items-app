@@ -10,10 +10,13 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import pl.com.betacom.itemsapp.application.port.in.CreateItem
 import pl.com.betacom.itemsapp.application.port.in.DeleteItem
+import pl.com.betacom.itemsapp.application.port.in.FetchItemHistory
 import pl.com.betacom.itemsapp.application.port.in.FetchItems
+import pl.com.betacom.itemsapp.application.port.in.ItemHistory
 import pl.com.betacom.itemsapp.application.port.in.UpdateItem
 import pl.com.betacom.itemsapp.application.port.in.UpdateItemCommand
 import pl.com.betacom.itemsapp.domain.Item
+import pl.com.betacom.itemsapp.domain.ItemRevisionType
 import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException
 import pl.com.betacom.itemsapp.domain.ItemNotFoundException
 import pl.com.betacom.itemsapp.domain.ItemVersionConflictException
@@ -43,7 +46,9 @@ import static pl.com.betacom.itemsapp.ItemTestConstants.fetchItem
 import static pl.com.betacom.itemsapp.ItemTestConstants.item
 import static pl.com.betacom.itemsapp.ItemTestConstants.updateItemCommand
 import static pl.com.betacom.itemsapp.UserTestConstants.ID
+import static pl.com.betacom.itemsapp.UserTestConstants.LOGIN
 import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.DELETE_EX_MSG
+import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.HISTORY_EX_MSG
 import static pl.com.betacom.itemsapp.domain.ItemAccessDeniedException.EDIT_EX_MSG
 
 @WebMvcTest(controllers = ItemRestController)
@@ -62,6 +67,9 @@ class ItemRestControllerSpec extends Specification {
 
     @SpringBean
     FetchItems listItems = Mock()
+
+    @SpringBean
+    FetchItemHistory fetchItemHistory = Mock()
 
     @SpringBean
     UpdateItem updateItem = Mock()
@@ -283,6 +291,73 @@ class ItemRestControllerSpec extends Specification {
 
         then:
         1 * deleteItem.delete(ITEM_ID) >> { throw new ItemNotFoundException(ITEM_ID) }
+        result.andExpect(status().isNotFound())
+    }
+
+    def "returns the item history"() {
+        given:
+        def history = [
+                new ItemHistory(1, ItemRevisionType.ADD, CREATED_AT, LOGIN, TITLE, CONTENT),
+                new ItemHistory(2, ItemRevisionType.MOD, UPDATED_AT, "anna.nowak", UPDATED_TITLE, UPDATED_CONTENT)
+        ]
+
+        when:
+        def result = mockMvc.perform(get("/items/$ITEM_ID/history")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * fetchItemHistory.fetch(ITEM_ID) >> history
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath('$[0].revision').value(1))
+                .andExpect(jsonPath('$[0].revisionType').value("ADD"))
+                .andExpect(jsonPath('$[0].timestamp').value(CREATED_AT.toString()))
+                .andExpect(jsonPath('$[0].changedBy').value(LOGIN))
+                .andExpect(jsonPath('$[0].title').value(TITLE))
+                .andExpect(jsonPath('$[0].content').value(CONTENT))
+                .andExpect(jsonPath('$[1].revision').value(2))
+                .andExpect(jsonPath('$[1].revisionType').value("MOD"))
+                .andExpect(jsonPath('$[1].changedBy').value("anna.nowak"))
+                .andExpect(jsonPath('$[1].title').value(UPDATED_TITLE))
+                .andExpect(jsonPath('$[1].content').value(UPDATED_CONTENT))
+    }
+
+    def "returns an empty history"() {
+        when:
+        def result = mockMvc.perform(get("/items/$ITEM_ID/history")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * fetchItemHistory.fetch(ITEM_ID) >> []
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath('$.length()').value(0))
+    }
+
+    def "rejects anonymous history"() {
+        when:
+        def result = mockMvc.perform(get("/items/$ITEM_ID/history"))
+
+        then:
+        0 * fetchItemHistory.fetch(_)
+        result.andExpect(status().isUnauthorized())
+    }
+
+    def "rejects history without access"() {
+        when:
+        def result = mockMvc.perform(get("/items/$ITEM_ID/history")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * fetchItemHistory.fetch(ITEM_ID) >> { throw new ItemAccessDeniedException(HISTORY_EX_MSG) }
+        result.andExpect(status().isForbidden())
+    }
+
+    def "rejects history of a missing item"() {
+        when:
+        def result = mockMvc.perform(get("/items/$ITEM_ID/history")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * fetchItemHistory.fetch(ITEM_ID) >> { throw new ItemNotFoundException(ITEM_ID) }
         result.andExpect(status().isNotFound())
     }
 

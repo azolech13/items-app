@@ -32,4 +32,8 @@ Content-Type: application/json
 DELETE http://localhost:8080/items/{{itemId}}
 Authorization: Bearer  {{token}}
 
+### GET example item history request
+GET http://localhost:8080/items/{{itemId}}/history
+Authorization: Bearer {{token}}
+
 ###
