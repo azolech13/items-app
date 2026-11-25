@@ -11,7 +11,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.NonNull;
-import pl.com.betacom.itemsapp.domain.ItemRole;
 
 @Entity
 @Table(name = "item_permissions")
@@ -32,5 +31,5 @@ class ItemPermissionEntity {
 
     @Enumerated(EnumType.STRING)
     @NonNull
-    private ItemRole role;
+    private ItemPermissionRole role;
 }

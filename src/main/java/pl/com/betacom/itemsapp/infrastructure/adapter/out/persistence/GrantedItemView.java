@@ -2,7 +2,6 @@ package pl.com.betacom.itemsapp.infrastructure.adapter.out.persistence;
 
 import java.time.Instant;
 import java.util.UUID;
-import pl.com.betacom.itemsapp.domain.ItemRole;
 
 public record GrantedItemView(
         UUID id,
@@ -13,5 +12,5 @@ public record GrantedItemView(
         boolean deleted,
         Instant createdAt,
         Instant updatedAt,
-        ItemRole role) {
+        ItemPermissionRole role) {
 }

@@ -10,13 +10,21 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import pl.com.betacom.itemsapp.application.port.in.CreateItem
 import pl.com.betacom.itemsapp.application.port.in.FetchItems
+import pl.com.betacom.itemsapp.application.port.in.UpdateItem
+import pl.com.betacom.itemsapp.application.port.in.UpdateItemCommand
+import pl.com.betacom.itemsapp.domain.Item
+import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException
+import pl.com.betacom.itemsapp.domain.ItemNotFoundException
+import pl.com.betacom.itemsapp.domain.ItemVersionConflictException
 import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityConfig
 import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityFiltersConfiguration
 import spock.lang.Specification
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import static org.hamcrest.Matchers.nullValue
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import static pl.com.betacom.itemsapp.ItemTestConstants.CONTENT
@@ -24,9 +32,14 @@ import static pl.com.betacom.itemsapp.ItemTestConstants.CREATED_AT
 import static pl.com.betacom.itemsapp.ItemTestConstants.CREATE_ITEM_BODY
 import static pl.com.betacom.itemsapp.ItemTestConstants.ITEM_ID
 import static pl.com.betacom.itemsapp.ItemTestConstants.TITLE
+import static pl.com.betacom.itemsapp.ItemTestConstants.UPDATED_AT
+import static pl.com.betacom.itemsapp.ItemTestConstants.UPDATED_CONTENT
+import static pl.com.betacom.itemsapp.ItemTestConstants.UPDATED_TITLE
+import static pl.com.betacom.itemsapp.ItemTestConstants.UPDATE_ITEM_BODY
 import static pl.com.betacom.itemsapp.ItemTestConstants.createItemCommand
-import static pl.com.betacom.itemsapp.ItemTestConstants.item
 import static pl.com.betacom.itemsapp.ItemTestConstants.fetchItem
+import static pl.com.betacom.itemsapp.ItemTestConstants.item
+import static pl.com.betacom.itemsapp.ItemTestConstants.updateItemCommand
 import static pl.com.betacom.itemsapp.UserTestConstants.ID
 
 @WebMvcTest(controllers = ItemRestController)
@@ -45,6 +58,9 @@ class ItemRestControllerSpec extends Specification {
 
     @SpringBean
     FetchItems listItems = Mock()
+
+    @SpringBean
+    UpdateItem updateItem = Mock()
 
     def "creates an item for the authenticated user"() {
         when:
@@ -76,6 +92,152 @@ class ItemRestControllerSpec extends Specification {
         then:
         0 * createItem.create(_)
         result.andExpect(status().isBadRequest())
+    }
+
+    def "updates an item for the authenticated user"() {
+        given:
+        def edited = new Item(ITEM_ID, ID, UPDATED_TITLE, CONTENT, 1, false, CREATED_AT, UPDATED_AT)
+
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_ITEM_BODY))
+
+        then:
+        1 * updateItem.update(updateItemCommand()) >> edited
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath('$.id').value(ITEM_ID.toString()))
+                .andExpect(jsonPath('$.title').value(UPDATED_TITLE))
+                .andExpect(jsonPath('$.content').value(CONTENT))
+                .andExpect(jsonPath('$.version').value(1))
+                .andExpect(jsonPath('$.updatedAt').value(UPDATED_AT.toString()))
+                .andExpect(jsonPath('$.createdAt').doesNotExist())
+                .andExpect(jsonPath('$.ownerId').doesNotExist())
+    }
+
+    def "rejects an update without a version"() {
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content('{"title":"' + UPDATED_TITLE + '"}'))
+
+        then:
+        0 * updateItem.update(_)
+        result.andExpect(status().isBadRequest())
+    }
+
+    def "clears the content when the title is omitted"() {
+        given:
+        def cleared = new Item(ITEM_ID, ID, TITLE, null, 1, false, CREATED_AT, UPDATED_AT)
+
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content('{"content":null,"version":0}'))
+
+        then:
+        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, null, 0)) >> cleared
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath('$.title').value(TITLE))
+                .andExpect(jsonPath('$.content').value(nullValue()))
+    }
+
+    def "keeps a null title and replaces the content"() {
+        given:
+        def edited = new Item(ITEM_ID, ID, TITLE, UPDATED_CONTENT, 1, false, CREATED_AT, UPDATED_AT)
+
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content('{"title":null,"content":"' + UPDATED_CONTENT + '","version":0}'))
+
+        then:
+        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, UPDATED_CONTENT, 0)) >> edited
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath('$.title').value(TITLE))
+                .andExpect(jsonPath('$.content').value(UPDATED_CONTENT))
+    }
+
+    def "rejects a blank title"() {
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content('{"title":"","version":0}'))
+
+        then:
+        0 * updateItem.update(_)
+        result.andExpect(status().isBadRequest())
+    }
+
+    def "clears the content when title and content are null"() {
+        given:
+        def cleared = new Item(ITEM_ID, ID, TITLE, null, 1, false, CREATED_AT, UPDATED_AT)
+
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content('{"version":0}'))
+
+        then:
+        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, null, 0)) >> cleared
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath('$.title').value(TITLE))
+                .andExpect(jsonPath('$.content').value(nullValue()))
+    }
+
+    def "rejects anonymous update"() {
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_ITEM_BODY))
+
+        then:
+        0 * updateItem.update(_)
+        result.andExpect(status().isUnauthorized())
+    }
+
+    def "rejects an update without permission"() {
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_ITEM_BODY))
+
+        then:
+        1 * updateItem.update(updateItemCommand()) >> { throw new ItemAccessDeniedException() }
+        result.andExpect(status().isForbidden())
+    }
+
+    def "rejects an update of a missing item"() {
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_ITEM_BODY))
+
+        then:
+        1 * updateItem.update(updateItemCommand()) >> { throw new ItemNotFoundException(ITEM_ID) }
+        result.andExpect(status().isNotFound())
+    }
+
+    def "rejects a stale version and returns the current one"() {
+        when:
+        def result = mockMvc.perform(patch("/items/$ITEM_ID")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of())))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_ITEM_BODY))
+
+        then:
+        1 * updateItem.update(updateItemCommand()) >> { throw new ItemVersionConflictException(2) }
+        result.andExpect(status().isConflict())
+                .andExpect(jsonPath('$.version').value(2))
+                .andExpect(jsonPath('$.detail').value(String.format(ItemVersionConflictException.EX_MSG, 2)))
     }
 
     def "lists items for the authenticated user"() {

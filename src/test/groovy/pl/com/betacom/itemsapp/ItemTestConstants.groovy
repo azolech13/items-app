@@ -2,6 +2,7 @@ package pl.com.betacom.itemsapp
 
 import pl.com.betacom.itemsapp.application.port.in.CreateItemCommand
 import pl.com.betacom.itemsapp.application.port.in.FetchItem
+import pl.com.betacom.itemsapp.application.port.in.UpdateItemCommand
 import pl.com.betacom.itemsapp.domain.Item
 import pl.com.betacom.itemsapp.domain.ItemRole
 
@@ -16,15 +17,23 @@ class ItemTestConstants {
     static final UUID SHARED_OWNER_ID = UUID.fromString("99990000-aaaa-bbbb-cccc-ddddeeee1111")
     static final String TITLE = "Moja pierwsza notatka"
     static final String CONTENT = "Treść notatki..."
+    static final String UPDATED_TITLE = "Zaktualizowany tytuł"
+    static final String UPDATED_CONTENT = "Nowa treść..."
     static final String SHARED_TITLE = "Cudza notatka"
     static final String SHARED_CONTENT = "Cudza treść"
     static final Instant CREATED_AT = Instant.parse("2025-06-01T10:05:00Z")
+    static final Instant UPDATED_AT = Instant.parse("2025-06-01T12:00:00Z")
     static final Instant SHARED_UPDATED_AT = CREATED_AT.plusSeconds(3600)
     static final int SHARED_VERSION = 1
     static final String CREATE_ITEM_BODY = '{"title":"' + TITLE + '","content":"' + CONTENT + '"}'
+    static final String UPDATE_ITEM_BODY = '{"title":"' + UPDATED_TITLE + '","version":0}'
 
     static CreateItemCommand createItemCommand() {
         new CreateItemCommand(TITLE, CONTENT)
+    }
+
+    static UpdateItemCommand updateItemCommand() {
+        new UpdateItemCommand(ITEM_ID, UPDATED_TITLE, null, 0)
     }
 
     static Item item() {

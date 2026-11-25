@@ -73,7 +73,9 @@ Bez aktywnego profilu aplikacja nie ma adresu JDBC. `local` wskazuje `localhost`
 
 `POST /items` wymaga nagłówka `Authorization: Bearer`. Body to `title` (1–255 znaków) i opcjonalny `content`. Właścicielem zostaje użytkownik z tokena. Odpowiedź `201` zawiera `id`, `title`, `content`, `version`, `ownerId`, `createdAt` i `updatedAt`. Nowa notatka ma `version` równe 0. Brak albo złe pole to `400`, brak albo zły token to `401`. Zapis dopisuje rewizję Enversa.
 
-`GET /items` wymaga tego samego nagłówka. Zwraca `200` i listę notatek użytkownika: własne z `myRole` równym `OWNER` oraz udostępnione z rolą `EDITOR` albo `VIEWER`. Usunięte notatki nie wchodzą. Element ma `id`, `title`, `content`, `version`, `ownerId`, `myRole` i `updatedAt`. Pusta lista to `[]`. Brak albo zły token to `401`. 
+`GET /items` wymaga tego samego nagłówka. Zwraca `200` i listę notatek użytkownika: własne z `myRole` równym `OWNER` oraz udostępnione z rolą `EDITOR` albo `VIEWER`. Usunięte notatki nie wchodzą. Element ma `id`, `title`, `content`, `version`, `ownerId`, `myRole` i `updatedAt`. Pusta lista to `[]`. Brak albo zły token to `401`.
+
+`PATCH /items/{id}` wymaga tego samego nagłówka. Body ma wymagane `version`. Brak `title` zostawia dotychczasowy tytuł. `content` zapisuje się tak, jak przyszedł, także jako `null`, gdy pola nie ma. Edytować może właściciel i użytkownik z rolą `EDITOR`. Odpowiedź `200` zawiera `id`, `title`, `content`, `version` i `updatedAt`. Brak `version` albo złe pole to `400`, brak albo zły token to `401`, `VIEWER` albo obcy użytkownik to `403`, brak albo usunięta notatka to `404`. Niezgodna wersja to `409`, a w treści jest aktualna `version`. 
 
 Przykładowe requesty są w `example-requests.http`. Da się je uruchomić lokalnie na `http://localhost:8080`, gdy aplikacja już działa: cały Compose albo profil `local`. Token z logowania wstawia się w żądanie tworzenia notatki.
 

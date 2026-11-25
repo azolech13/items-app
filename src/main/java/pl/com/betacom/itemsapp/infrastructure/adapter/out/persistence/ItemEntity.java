@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.envers.Audited;
 import org.springframework.lang.NonNull;
 
@@ -28,9 +29,11 @@ class ItemEntity {
     @NonNull
     private UUID ownerId;
 
+    @Setter
     @NonNull
     private String title;
 
+    @Setter
     private String content;
 
     @Version
@@ -41,6 +44,7 @@ class ItemEntity {
     @NonNull
     private Instant createdAt;
 
+    @Setter
     @NonNull
     private Instant updatedAt;
 }

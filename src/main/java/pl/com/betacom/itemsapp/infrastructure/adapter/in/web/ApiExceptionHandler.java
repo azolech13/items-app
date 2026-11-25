@@ -6,6 +6,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pl.com.betacom.itemsapp.domain.InvalidCredentialsException;
+import pl.com.betacom.itemsapp.domain.ItemAccessDeniedException;
+import pl.com.betacom.itemsapp.domain.ItemNotFoundException;
+import pl.com.betacom.itemsapp.domain.ItemVersionConflictException;
 import pl.com.betacom.itemsapp.domain.LoginTakenException;
 
 @RestControllerAdvice
@@ -32,5 +35,22 @@ class ApiExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     ProblemDetail invalidCredentials(InvalidCredentialsException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @ExceptionHandler(ItemNotFoundException.class)
+    ProblemDetail itemNotFound(ItemNotFoundException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(ItemAccessDeniedException.class)
+    ProblemDetail itemAccessDenied(ItemAccessDeniedException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
+    }
+
+    @ExceptionHandler(ItemVersionConflictException.class)
+    ProblemDetail itemVersionConflict(ItemVersionConflictException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        problem.setProperty("version", exception.currentVersion());
+        return problem;
     }
 }

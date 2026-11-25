@@ -21,4 +21,11 @@ Content-Type: application/json
 GET http://localhost:8080/items
 Authorization: Bearer {{token}}
 
+### PATCH example update item request
+PATCH http://localhost:8080/items/{{itemId}}
+Authorization: Bearer  {{token}}
+Content-Type: application/json
+
+{"title":"Moja pierwsza notatka","content":"Treść notatki...", "version":1}
+
 ###
