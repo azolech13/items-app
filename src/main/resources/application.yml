@@ -17,3 +17,17 @@ spring:
     properties:
       "[hibernate.type.preferred_uuid_jdbc_type]": CHAR
       "[hibernate.hbm2ddl.schema_filter_provider]": pl.com.betacom.itemsapp.infrastructure.adapter.out.persistence.LiquibaseTablesFilterProvider
+
+app:
+  security:
+    jwt:
+      # HMAC, nie para kluczy. Ta aplikacja sama podpisuje token i sama go sprawdza,
+      # więc osobny klucz publiczny nic nie rozdziela. Para ma sens, gdy podpisuje jedna
+      # usługa, a inne tylko weryfikują i dostają sam klucz publiczny. Do przeglądarki
+      # trafia tylko token. Wartość jest deweloperska. W produkcji sekret leży w vaulcie,
+      # nie w repozytorium.
+      secret: items-app-dev-jwt-secret-32b-min
+      expiration-seconds: 3600
+    login-rate-limit:
+      attempts: 5
+      window: 1m

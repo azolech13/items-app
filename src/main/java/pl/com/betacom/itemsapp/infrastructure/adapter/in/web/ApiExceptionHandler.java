@@ -5,6 +5,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pl.com.betacom.itemsapp.domain.InvalidCredentialsException;
 import pl.com.betacom.itemsapp.domain.LoginTakenException;
 
 @RestControllerAdvice
@@ -26,5 +27,10 @@ class ApiExceptionHandler {
     @ExceptionHandler(LoginTakenException.class)
     ProblemDetail loginTaken(LoginTakenException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    ProblemDetail invalidCredentials(InvalidCredentialsException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
     }
 }

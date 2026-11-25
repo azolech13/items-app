@@ -69,6 +69,8 @@ Bez aktywnego profilu aplikacja nie ma adresu JDBC. `local` wskazuje `localhost`
 
 `POST /register` jest publiczny. Body to JSON z polami `login` (3–64 znaki) i `password` (minimum 8 znaków). Hasło w bazie leży jako hash bcrypt. Odpowiedź `201` zawiera `id`, `login` i `createdAt`. Zajęty login zwraca `409`, niepoprawne pola `400`.
 
+`POST /login` jest publiczny. Body to `login` i `password`. Odpowiedź `200` zawiera `token` i `expiresIn`. Brak pola to `400`, złe dane to `401`. Z jednego adresu IP można wysłać 5 żądań na minutę. Szóste zwraca `429` i nagłówek `Retry-After`. Limit i czas życia tokena są w `application.yml`. Token jest podpisany HMAC, sekret nie trafia do klienta.
+
 Przykładowy request jest w `example-requests.http`. Da się go uruchomić lokalnie na `http://localhost:8080`, gdy aplikacja już działa: cały Compose albo profil `local`.
 
 

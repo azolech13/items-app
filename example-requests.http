@@ -4,4 +4,10 @@ Content-Type: application/json
 
 {"login":"jan.kowalski","password":"password1"}
 
+### POST example login request
+POST http://localhost:8080/login
+Content-Type: application/json
+
+{"login":"jan.kowalski", "password":"password1"}
+
 ###

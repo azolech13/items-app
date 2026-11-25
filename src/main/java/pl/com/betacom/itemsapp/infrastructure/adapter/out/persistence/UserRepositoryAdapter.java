@@ -1,5 +1,6 @@
 package pl.com.betacom.itemsapp.infrastructure.adapter.out.persistence;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,6 +22,12 @@ class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
+    public Optional<User> findByLogin(String login) {
+        return users.findByLogin(login)
+                .map(UserRepositoryAdapter::toDomain);
+    }
+
+    @Override
     public User save(User user) {
         try {
             users.saveAndFlush(toEntity(user));
@@ -33,5 +40,9 @@ class UserRepositoryAdapter implements UserRepository {
 
     private static UserEntity toEntity(User user) {
         return new UserEntity(user.id(), user.login(), user.passwordHash(), user.createdAt());
+    }
+
+    private static User toDomain(UserEntity entity) {
+        return new User(entity.getId(), entity.getLogin(), entity.getPassword(), entity.getCreatedAt());
     }
 }

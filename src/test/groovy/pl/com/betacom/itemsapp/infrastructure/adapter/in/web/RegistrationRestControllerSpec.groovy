@@ -6,9 +6,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.context.TestPropertySource
 import pl.com.betacom.itemsapp.application.port.in.RegisterUser
 import pl.com.betacom.itemsapp.domain.LoginTakenException
 import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityConfig
+import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityFiltersConfiguration
 import spock.lang.Specification
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -22,7 +24,11 @@ import static pl.com.betacom.itemsapp.UserTestConstants.command
 import static pl.com.betacom.itemsapp.UserTestConstants.user
 
 @WebMvcTest(controllers = RegistrationRestController)
-@Import([SecurityConfig, ApiExceptionHandler])
+@Import([SecurityConfig, ApiExceptionHandler, SecurityFiltersConfiguration])
+@TestPropertySource(properties = [
+        "app.security.login-rate-limit.attempts=100",
+        "app.security.login-rate-limit.window=1m"
+])
 class RegistrationRestControllerSpec extends Specification {
 
     @Autowired
