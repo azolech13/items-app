@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - include:
+      file: db/changeset/001-create-users.yml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changeset/002-create-items.yml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changeset/003-create-item-permissions.yml
+      relativeToChangelogFile: false

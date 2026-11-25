@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-item-permissions
+      author: items-app
+      logicalFilePath: db/changeset/003-create-item-permissions.yml
+      changes:
+        - createTable:
+            tableName: item_permissions
+            columns:
+              - column:
+                  name: id
+                  type: CHAR(36)
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_item_permissions
+                    nullable: false
+              - column:
+                  name: item_id
+                  type: CHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: CHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: "ENUM('VIEWER','EDITOR')"
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            constraintName: uk_item_permissions_item_user
+            tableName: item_permissions
+            columnNames: item_id, user_id
+        - addForeignKeyConstraint:
+            constraintName: fk_item_permissions_item
+            baseTableName: item_permissions
+            baseColumnNames: item_id
+            referencedTableName: items
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_item_permissions_user
+            baseTableName: item_permissions
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id

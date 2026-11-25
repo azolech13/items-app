@@ -14,3 +14,6 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: update
+    properties:
+      "[hibernate.type.preferred_uuid_jdbc_type]": CHAR
+      "[hibernate.hbm2ddl.schema_filter_provider]": pl.com.betacom.itemsapp.infrastructure.adapter.out.persistence.LiquibaseTablesFilterProvider
