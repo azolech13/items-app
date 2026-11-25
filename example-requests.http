@@ -10,4 +10,11 @@ Content-Type: application/json
 
 {"login":"jan.kowalski", "password":"password1"}
 
+### POST example create item request
+POST http://localhost:8080/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"title":"Moja pierwsza notatka","content":"Treść notatki..."}
+
 ###

@@ -4,6 +4,8 @@
 spring:
   application:
     name: items-app
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
     username: items
     # Hasło deweloperskie, tylko na potrzeby zadania.
