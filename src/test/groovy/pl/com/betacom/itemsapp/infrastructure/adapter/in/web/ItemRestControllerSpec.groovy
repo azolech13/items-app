@@ -9,11 +9,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import pl.com.betacom.itemsapp.application.port.in.CreateItem
+import pl.com.betacom.itemsapp.application.port.in.FetchItems
 import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityConfig
 import pl.com.betacom.itemsapp.infrastructure.adapter.in.security.SecurityFiltersConfiguration
 import spock.lang.Specification
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -24,6 +26,7 @@ import static pl.com.betacom.itemsapp.ItemTestConstants.ITEM_ID
 import static pl.com.betacom.itemsapp.ItemTestConstants.TITLE
 import static pl.com.betacom.itemsapp.ItemTestConstants.createItemCommand
 import static pl.com.betacom.itemsapp.ItemTestConstants.item
+import static pl.com.betacom.itemsapp.ItemTestConstants.fetchItem
 import static pl.com.betacom.itemsapp.UserTestConstants.ID
 
 @WebMvcTest(controllers = ItemRestController)
@@ -39,6 +42,9 @@ class ItemRestControllerSpec extends Specification {
 
     @SpringBean
     CreateItem createItem = Mock()
+
+    @SpringBean
+    FetchItems listItems = Mock()
 
     def "creates an item for the authenticated user"() {
         when:
@@ -70,5 +76,44 @@ class ItemRestControllerSpec extends Specification {
         then:
         0 * createItem.create(_)
         result.andExpect(status().isBadRequest())
+    }
+
+    def "lists items for the authenticated user"() {
+        when:
+        def result = mockMvc.perform(get("/items")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * listItems.fetch() >> [fetchItem()]
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath('$[0].id').value(ITEM_ID.toString()))
+                .andExpect(jsonPath('$[0].title').value(TITLE))
+                .andExpect(jsonPath('$[0].content').value(CONTENT))
+                .andExpect(jsonPath('$[0].version').value(0))
+                .andExpect(jsonPath('$[0].ownerId').value(ID.toString()))
+                .andExpect(jsonPath('$[0].myRole').value('OWNER'))
+                .andExpect(jsonPath('$[0].updatedAt').value(CREATED_AT.toString()))
+                .andExpect(jsonPath('$[0].createdAt').doesNotExist())
+                .andExpect(jsonPath('$[0].deleted').doesNotExist())
+    }
+
+    def "returns an empty list"() {
+        when:
+        def result = mockMvc.perform(get("/items")
+                .with(authentication(new UsernamePasswordAuthenticationToken(ID, null, List.of()))))
+
+        then:
+        1 * listItems.fetch() >> []
+        result.andExpect(status().isOk())
+                .andExpect(jsonPath('$').isEmpty())
+    }
+
+    def "rejects anonymous listing"() {
+        when:
+        def result = mockMvc.perform(get("/items"))
+
+        then:
+        0 * listItems.fetch()
+        result.andExpect(status().isUnauthorized())
     }
 }

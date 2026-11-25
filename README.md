@@ -71,7 +71,9 @@ Bez aktywnego profilu aplikacja nie ma adresu JDBC. `local` wskazuje `localhost`
 
 `POST /login` jest publiczny. Body to `login` i `password`. Odpowiedź `200` zawiera `token` i `expiresIn`. Brak pola to `400`, złe dane to `401`. Z jednego adresu IP można wysłać 5 żądań na minutę. Szóste zwraca `429` i nagłówek `Retry-After`. Limit i czas życia tokena są w `application.yml`. Token jest podpisany HMAC, sekret nie trafia do klienta.
 
-`POST /items` wymaga nagłówka `Authorization: Bearer`. Body to `title` (1–255 znaków) i opcjonalny `content`. Właścicielem zostaje użytkownik z tokena. Odpowiedź `201` zawiera `id`, `title`, `content`, `version`, `ownerId`, `createdAt` i `updatedAt`. Nowa notatka ma `version` równe 0. Brak albo złe pole to `400`, brak albo zły token to `401`. Zapis dopisuje rewizję Enversa. 
+`POST /items` wymaga nagłówka `Authorization: Bearer`. Body to `title` (1–255 znaków) i opcjonalny `content`. Właścicielem zostaje użytkownik z tokena. Odpowiedź `201` zawiera `id`, `title`, `content`, `version`, `ownerId`, `createdAt` i `updatedAt`. Nowa notatka ma `version` równe 0. Brak albo złe pole to `400`, brak albo zły token to `401`. Zapis dopisuje rewizję Enversa.
+
+`GET /items` wymaga tego samego nagłówka. Zwraca `200` i listę notatek użytkownika: własne z `myRole` równym `OWNER` oraz udostępnione z rolą `EDITOR` albo `VIEWER`. Usunięte notatki nie wchodzą. Element ma `id`, `title`, `content`, `version`, `ownerId`, `myRole` i `updatedAt`. Pusta lista to `[]`. Brak albo zły token to `401`. 
 
 Przykładowe requesty są w `example-requests.http`. Da się je uruchomić lokalnie na `http://localhost:8080`, gdy aplikacja już działa: cały Compose albo profil `local`. Token z logowania wstawia się w żądanie tworzenia notatki.
 

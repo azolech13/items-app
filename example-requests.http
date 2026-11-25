@@ -17,4 +17,8 @@ Content-Type: application/json
 
 {"title":"Moja pierwsza notatka","content":"Treść notatki..."}
 
+### GET example list items request
+GET http://localhost:8080/items
+Authorization: Bearer {{token}}
+
 ###

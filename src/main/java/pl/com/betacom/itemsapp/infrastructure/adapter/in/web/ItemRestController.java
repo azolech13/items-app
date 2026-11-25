@@ -1,15 +1,19 @@
 package pl.com.betacom.itemsapp.infrastructure.adapter.in.web;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pl.com.betacom.itemsapp.application.port.in.CreateItem;
 import pl.com.betacom.itemsapp.application.port.in.CreateItemCommand;
+import pl.com.betacom.itemsapp.application.port.in.FetchItems;
+import pl.com.betacom.itemsapp.application.port.in.FetchItem;
 import pl.com.betacom.itemsapp.domain.Item;
 
 @RestController
@@ -17,12 +21,20 @@ import pl.com.betacom.itemsapp.domain.Item;
 class ItemRestController {
 
     private final CreateItem createItem;
+    private final FetchItems fetchItems;
 
     @PostMapping("/items")
     @ResponseStatus(HttpStatus.CREATED)
     ItemResponse create(@Valid @RequestBody ItemRequest request) {
         Item item = createItem.create(new CreateItemCommand(request.title(), request.content()));
         return createItemResponse(item);
+    }
+
+    @GetMapping("/items")
+    List<ItemListResponse> list() {
+        return fetchItems.fetch().stream()
+                .map(ItemRestController::toListResponse)
+                .toList();
     }
 
     @NonNull
@@ -34,6 +46,18 @@ class ItemRestController {
                 item.version(),
                 item.ownerId(),
                 item.createdAt(),
+                item.updatedAt());
+    }
+
+    @NonNull
+    private static ItemListResponse toListResponse(FetchItem item) {
+        return new ItemListResponse(
+                item.id(),
+                item.title(),
+                item.content(),
+                item.version(),
+                item.ownerId(),
+                item.myRole(),
                 item.updatedAt());
     }
 }
