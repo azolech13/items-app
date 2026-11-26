@@ -28,7 +28,7 @@ app:
       # usługa, a inne tylko weryfikują i dostają sam klucz publiczny. Do przeglądarki
       # trafia tylko token. Wartość jest deweloperska. W produkcji sekret leży w vaulcie,
       # nie w repozytorium.
-      secret: items-app-dev-jwt-secret-32b-min
+      secret: aXRlbXMtYXBwLWRldi1qd3Qtc2VjcmV0LTMyYi1taW4=
       expiration-seconds: 3600
     login-rate-limit:
       attempts: 5

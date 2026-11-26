@@ -2,8 +2,8 @@ package pl.com.betacom.itemsapp.infrastructure.adapter.out.security;
 
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
@@ -61,6 +61,6 @@ class JwtTokenProvider implements TokenProvider {
     }
 
     private SecretKey signingKey() {
-        return Keys.hmacShaKeyFor(properties.getSecret().getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(properties.getSecret()));
     }
 }
