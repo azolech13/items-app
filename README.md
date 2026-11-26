@@ -4,13 +4,35 @@ Backend do zarządzania notatkami. Java 21, Spring Boot 3.5, MySQL 8.4, Liquibas
 
 ## Architektura
 
+### Warstwy i architektura heksagonalna
+
+Aplikacja jest podzielona zgodnie z architekturą heksagonalną (porty i adaptery):
+
+- `domain` — niemutowalne rekordy (`User`, `Item`, `ItemPermission`), enumy ról i typów rewizji oraz hierarchie wyjątków (`sealed class` + `permits`), całkowicie bez zależności od Springa i JPA,
+- `application` — porty wejściowe (`port.in`), wyjściowe (`port.out`) oraz serwisy realizujące przypadki użycia (`service`),
+- `infrastructure` — adaptery wejściowe (`adapter.in.web`, `adapter.in.security`) oraz wyjściowe (`adapter.out.persistence`, `adapter.out.security`, `adapter.out.time`, `adapter.out.uuid`).
+
+Takie rozdzielenie zwiększa czytelność, wymusza jednoznaczny kierunek zależności do środka aplikacji, ułatwia testowanie logiki biznesowej na mockach portów (bez kontekstu Springa i bazy) oraz pozwala wymieniać adaptery techniczne bez modyfikacji logiki domenowej.
+
+**Świadome uproszczenie:** warstwa `application.service` korzysta bezpośrednio z adnotacji Springa (`@Service`, `@Component`, `@Transactional`). W czystym wariancie heksagonalnym serwisy powinny pozostać czystą Javą, a rejestracja beanów i granice transakcji powinny trafić do konfiguracji w warstwie infrastruktury. Na potrzeby zadania przyjęto lżejszy wariant bez dodatkowego kodu konfiguracyjnego.
+
+### Bezpieczeństwo i autoryzacja
+
+- **JWT z podpisem HMAC zamiast pary kluczy (RSA/ECDSA):** jedna aplikacja wystawia token i sama go weryfikuje, więc osobny klucz publiczny niczego tu nie izoluje. Podpis asymetryczny ma sens w architekturze rozproszonej, gdy jedna usługa podpisuje tokeny, a pozostałe dostają wyłącznie klucz publiczny do ich sprawdzania. Klucz z `application.yml` jest deweloperskim tekstem wczytywanym jako `UTF-8` — w produkcji losowy sekret binarny z vaulta lub zmiennych środowiskowych warto trzymać w Base64 i dekodować przez `Decoders.BASE64.decode(...)`.
+- **Wyłączony CSRF (`STATELESS` + SPA):** aplikacja działa bez sesji HTTP, a uwierzytelnianie odbywa się przez nagłówek `Authorization: Bearer <token>` (np. z aplikacji SPA w Angularze). Ponieważ przeglądarka nie dołącza tego nagłówka automatycznie do żądań między domenami, klasyczny atak CSRF nie dotyczy tego modelu.
+- **XSS a przechowywanie tokena po stronie klienta:** trzymanie JWT w `localStorage` eliminuje CSRF, ale naraża token na odczyt w razie podatności XSS na froncie. Dla JSON REST API Spring Security dodaje domyślne nagłówki bezpieczeństwa (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Cache-Control: no-store`), natomiast kluczowa ochrona przed XSS leży po stronie aplikacji SPA (wbudowana sanityzacja Angulara i nagłówek `Content-Security-Policy` serwowany razem z frontendem). W systemie produkcyjnym bezpieczniejszą alternatywą dla `localStorage` jest krótko żyjący access token trzymany w pamięci i refresh token w ciasteczku `HttpOnly; Secure; SameSite` (albo wzorzec BFF).
+- **Autoryzacja na poziomie zasobu:** token zawiera wyłącznie identyfikator użytkownika (`sub`), bez ról i listy notatek. Uprawnienia (`OWNER` z `items.owner_id`, `EDITOR`/`VIEWER` z `item_permissions`) są sprawdzane przy każdym żądaniu w warstwie aplikacji, dzięki czemu zmiana lub cofnięcie dostępu działa natychmiast, bez czekania na wygaśnięcie JWT.
+
+### Baza danych, historia zmian i współbieżność
+
 Tabele biznesowe należą do Liquibase. Changelog jest w `src/main/resources/db/changelog/db.changelog-master.yaml` i włącza po kolei:
 
 - `db/changeset/001-create-users.yml`
 - `db/changeset/002-create-items.yml`
 - `db/changeset/003-create-item-permissions.yml`
+- `db/changeset/004-add-item-permission-timestamps.yml`
 
-`spring.jpa.hibernate.ddl-auto` zostaje na `update`, bo tabele historii ma założyć Hibernate Envers, gdy pojawi się encja z `@Audited` i własna `RevisionEntity`. `items_aud` nie ma w changelogu: wynika to z założeń zadania, które każe zostawić tę tabelę Enversowi.
+`spring.jpa.hibernate.ddl-auto` zostaje na `update`, bo tabele historii ma założyć Hibernate Envers na podstawie `@Audited` w `ItemEntity` oraz własnej encji `AuthorRevision` (`@RevisionEntity`). `items_aud` nie ma w changelogu: wynika to z założeń zadania, które każe zostawić tę tabelę Enversowi.
 
 Żeby `update` nie zmieniał tabel prowadzonych w Liquibase, `LiquibaseTablesFilterProvider` wyłącza je ze schematu Hibernate. Klasa jest publiczna, bo Hibernate tworzy ją po nazwie z konfiguracji. Leży w `infrastructure.adapter.out.persistence`.
 
@@ -21,7 +43,14 @@ Nowa tabela zarządzana przez Liquibase wymaga dwóch wpisów:
 
 Bez drugiego wpisu `ddl-auto: update` zacznie tę tabelę modyfikować. Jedynym źródłem zmian schematu tabel biznesowych jest Liquibase. Filtr nie zgłasza rozjazdu encji z changelogiem, więc kolumny w changesecie i w encji mają się zgadzać.
 
-Hasło bazy w `application.yml` jest deweloperskie, na potrzeby zadania. W produkcji nie powinno leżeć w repozytorium: podstawia się je przy starcie, na przykład z vaulta.
+- **Generowanie UUID i czasu w aplikacji (`UuidGenerator`, `DateTimeProvider`):** identyfikatory UUID są nadawane przed zapisem w bazie, bez `@GeneratedValue` po stronie JPA. Dzięki temu obiekt ma stałe, niezmienne `id` już od momentu utworzenia (bez stanu z `id == null` przed `persist`/`flush`), co pozwala bezpiecznie oprzeć ewentualne `equals`/`hashCode` encji wyłącznie o samo `id` zamiast modyfikowalnych pól i używać jej w kolekcjach haszujących bez ryzyka „zgubienia” elementu po zapisie. Zarówno `UUID.randomUUID()`, jak i `Instant.now()` zostały zamknięte za portami wyjściowymi (`UuidGenerator`, `DateTimeProvider`), żeby łatwo je mockować w deterministycznych testach jednostkowych.
+- **Optimistic locking:** encja `ItemEntity` ma `@Version`. Przy `PATCH` wersja jest sprawdzana w serwisie oraz egzekwowana przez Hibernate podczas `saveAndFlush`, żeby odpowiedź `200` zawierała już podbitą wartość `version`, a konflikt zwracał `409` z aktualną wersją w komunikacie.
+- **Soft delete:** usunięcie notatki ustawia `deleted = true`, dzięki czemu domyślne zapytania ją pomijają, a historia w Enversie pozostaje dostępna (zmiana flagi `deleted` na `true` jest mapowana w odpowiedzi historii na `DEL`).
+- **Sekrety deweloperskie:** hasło bazy i klucz JWT w `application.yml` służą wyłącznie do uruchomienia zadania lokalnie i w Docker Compose. W produkcji nie leżą w repozytorium, tylko są podstawiane przy starcie (np. z vaulta).
+
+### Rate limiting
+
+Endpoint `POST /login` chroni filtr `LoginRateLimitFilter` oparty o Bucket4j z kubełkami trzymanymi w pamięci per adres IP (bez zewnętrznych zależności takich jak Redis, zgodnie z wymaganiem zadania). W środowisku wieloinstancyjnym limitowanie należałoby przenieść do współdzielonego magazynu (np. Redis) albo na warstwę API Gateway / reverse proxy.
 
 ## Uruchomienie
 
@@ -96,5 +125,22 @@ Zadanie buduje JAR, stawia MySQL 8.4 i uruchamia ten JAR w kontenerze. Sprawdza 
 `GET /items/{id}/history` wymaga tego samego nagłówka. Zwraca `200` i rewizje Enversa od najstarszej. Element ma `revision`, `revisionType` (`ADD`, `MOD`, `DEL`), `timestamp`, `changedBy` (login autora zmiany), `title` i `content`. Miękkie usunięcie jest rewizją `DEL`. Czytać może właściciel oraz użytkownik z rolą `VIEWER` albo `EDITOR`, także gdy notatka jest już usunięta. Pusta lista to `[]`. Brak albo zły token to `401`, brak dostępu to `403`, brak notatki to `404`. 
 
 Przykładowe requesty są w `example-requests.http`. Da się je uruchomić lokalnie na `http://localhost:8080`, gdy aplikacja już działa: cały Compose albo profil `local`. Token z logowania wstawia się w żądanie tworzenia notatki.
+
+## Konfiguracja
+
+Parametry aplikacji w `src/main/resources/application.yml` oraz profilach `application-local.yml` i `application-docker.yml`:
+
+| Parametr | Wartość domyślna | Opis |
+| --- | --- | --- |
+| `spring.profiles.active` | brak (`local` lub `docker`) | Wybiera adres bazy: `localhost` dla uruchomienia lokalnego albo host `mysql` w sieci Docker Compose. |
+| `spring.datasource.url` | `jdbc:mysql://localhost:3306/items` (`local`), `jdbc:mysql://mysql:3306/items` (`docker`) | Adres JDBC bazy MySQL. |
+| `spring.datasource.username` | `items` | Użytkownik bazy MySQL. |
+| `spring.datasource.password` | `items` | Hasło deweloperskie do bazy MySQL (w produkcji podstawiane zewnętrznie, np. z vaulta). |
+| `spring.jpa.hibernate.ddl-auto` | `update` | Pozwala Hibernate Envers utworzyć tabele audytowe; tabele Liquibase są wykluczone przez `LiquibaseTablesFilterProvider`. |
+| `app.security.jwt.secret` | `items-app-dev-jwt-secret-32b-min` | Klucz HMAC (min. 32 bajty) do podpisywania i weryfikacji tokenów JWT. |
+| `app.security.jwt.expiration-seconds` | `3600` | Czas ważności tokena JWT w sekundach. |
+| `app.security.login-rate-limit.attempts` | `5` | Maksymalna liczba żądań `POST /login` na adres IP w jednym oknie czasu. |
+| `app.security.login-rate-limit.window` | `1m` | Długość okna rate limitera Bucket4j dla `POST /login`. |
+
 
 

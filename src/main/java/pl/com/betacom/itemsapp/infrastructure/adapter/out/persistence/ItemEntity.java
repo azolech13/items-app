@@ -1,5 +1,6 @@
 package pl.com.betacom.itemsapp.infrastructure.adapter.out.persistence;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -34,6 +35,7 @@ class ItemEntity {
     private String title;
 
     @Setter
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Version

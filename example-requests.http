@@ -23,14 +23,14 @@ Authorization: Bearer {{token}}
 
 ### PATCH example update item request
 PATCH http://localhost:8080/items/{{itemId}}
-Authorization: Bearer  {{token}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {"title":"Moja pierwsza notatka","content":"Treść notatki...", "version":1}
 
 ### DELETE example delete item request
 DELETE http://localhost:8080/items/{{itemId}}
-Authorization: Bearer  {{token}}
+Authorization: Bearer {{token}}
 
 ### GET example item history request
 GET http://localhost:8080/items/{{itemId}}/history
@@ -44,5 +44,5 @@ Content-Type: application/json
 {"userId":"99990000-aaaa-bbbb-cccc-ddddeeee1111","role":"EDITOR"}
 
 ### DELETE example revoke share request
-DELETE http://localhost:8080/items/{{itemId}}/share/{{userId}}}}
+DELETE http://localhost:8080/items/{{itemId}}/share/{{userId}}
 Authorization: Bearer {{token}}
