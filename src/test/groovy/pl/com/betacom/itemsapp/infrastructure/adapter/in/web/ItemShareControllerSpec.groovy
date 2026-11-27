@@ -104,6 +104,7 @@ class ItemShareControllerSpec extends Specification {
         then:
         0 * shareItem.share(_)
         result.andExpect(status().isBadRequest())
+                .andExpect(jsonPath('$.errors[0]').value("role: accepts only VIEWER, EDITOR"))
     }
 
     def "rejects granting a role to the owner"() {

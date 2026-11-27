@@ -29,7 +29,7 @@ class ItemShareController {
 
     @PostMapping
     ResponseEntity<ShareItemResponse> share(@PathVariable UUID id, @Valid @RequestBody ShareItemRequest request) {
-        ShareResult result = shareItem.share(new ShareItemCommand(id, request.userId(), ItemRole.valueOf(request.role().name())));
+        ShareResult result = shareItem.share(new ShareItemCommand(id, request.userId(), ItemRole.valueOf(request.role())));
         ShareItemResponse body = new ShareItemResponse(result.itemId(), result.userId(), result.role(), result.grantedAt());
         HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
         return ResponseEntity.status(status).body(body);
