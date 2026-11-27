@@ -12,6 +12,7 @@ import pl.com.betacom.itemsapp.domain.ItemRole
 import pl.com.betacom.itemsapp.domain.ItemVersionConflictException
 import spock.lang.Specification
 
+import static pl.com.betacom.itemsapp.ItemTestConstants.CONTENT
 import static pl.com.betacom.itemsapp.ItemTestConstants.ITEM_ID
 import static pl.com.betacom.itemsapp.ItemTestConstants.SHARED_OWNER_ID
 import static pl.com.betacom.itemsapp.ItemTestConstants.TITLE
@@ -97,7 +98,7 @@ class UpdateItemServiceSpec extends Specification {
 
     def "rejects a stale version and reports the current one"() {
         when:
-        service.update(new UpdateItemCommand(ITEM_ID, UPDATED_TITLE, null, 1))
+        service.update(new UpdateItemCommand(ITEM_ID, UPDATED_TITLE, null, false, 1))
 
         then:
         1 * currentUserProvider.id() >> ID
@@ -107,21 +108,21 @@ class UpdateItemServiceSpec extends Specification {
         conflict.message == String.format(ItemVersionConflictException.EX_MSG, 0)
     }
 
-    def "saves a cleared content and the existing title"() {
+    def "keeps the title and content when both are omitted"() {
         given:
         def clock = Mock(DateTimeProvider)
         def updating = new UpdateItemService(
                 currentUserProvider, itemRepository, itemPermissionRepository, new UpdateItemMapper(clock))
 
         when:
-        updating.update(new UpdateItemCommand(ITEM_ID, null, null, 0))
+        updating.update(new UpdateItemCommand(ITEM_ID, null, null, false, 0))
 
         then:
         1 * currentUserProvider.id() >> ID
         1 * itemRepository.findById(ITEM_ID) >> Optional.of(item())
         1 * clock.now() >> UPDATED_AT
         1 * itemRepository.update({ Item saved ->
-            saved.title() == TITLE && saved.content() == null && saved.updatedAt() == UPDATED_AT
+            saved.title() == TITLE && saved.content() == CONTENT && saved.updatedAt() == UPDATED_AT
         }) >> { Item saved -> saved }
     }
 }

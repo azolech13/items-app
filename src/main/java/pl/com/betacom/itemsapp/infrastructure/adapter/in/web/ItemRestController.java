@@ -60,7 +60,8 @@ class ItemRestController {
 
     @PatchMapping("/{id}")
     UpdateItemResponse update(@PathVariable UUID id, @Valid @RequestBody UpdateItemRequest request) {
-        Item item = updateItem.update(new UpdateItemCommand(id, request.title(), request.content(), request.version()));
+        Item item = updateItem.update(new UpdateItemCommand(
+                id, request.title(), request.content(), request.contentSpecified(), request.version()));
         return toUpdateResponse(item);
     }
 

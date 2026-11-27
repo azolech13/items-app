@@ -153,7 +153,7 @@ class ItemRestControllerSpec extends Specification {
                 .content('{"content":null,"version":0}'))
 
         then:
-        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, null, 0)) >> cleared
+        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, null, true, 0)) >> cleared
         result.andExpect(status().isOk())
                 .andExpect(jsonPath('$.title').value(TITLE))
                 .andExpect(jsonPath('$.content').value(nullValue()))
@@ -170,7 +170,7 @@ class ItemRestControllerSpec extends Specification {
                 .content('{"title":null,"content":"' + UPDATED_CONTENT + '","version":0}'))
 
         then:
-        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, UPDATED_CONTENT, 0)) >> edited
+        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, UPDATED_CONTENT, true, 0)) >> edited
         result.andExpect(status().isOk())
                 .andExpect(jsonPath('$.title').value(TITLE))
                 .andExpect(jsonPath('$.content').value(UPDATED_CONTENT))
@@ -188,9 +188,9 @@ class ItemRestControllerSpec extends Specification {
         result.andExpect(status().isBadRequest())
     }
 
-    def "clears the content when title and content are null"() {
+    def "keeps omitted title and content"() {
         given:
-        def cleared = new Item(ITEM_ID, ID, TITLE, null, 1, false, CREATED_AT, UPDATED_AT)
+        def kept = new Item(ITEM_ID, ID, TITLE, CONTENT, 1, false, CREATED_AT, UPDATED_AT)
 
         when:
         def result = mockMvc.perform(patch("/items/$ITEM_ID")
@@ -199,10 +199,10 @@ class ItemRestControllerSpec extends Specification {
                 .content('{"version":0}'))
 
         then:
-        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, null, 0)) >> cleared
+        1 * updateItem.update(new UpdateItemCommand(ITEM_ID, null, null, false, 0)) >> kept
         result.andExpect(status().isOk())
                 .andExpect(jsonPath('$.title').value(TITLE))
-                .andExpect(jsonPath('$.content').value(nullValue()))
+                .andExpect(jsonPath('$.content').value(CONTENT))
     }
 
     def "rejects anonymous update"() {

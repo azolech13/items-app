@@ -35,7 +35,7 @@ class ItemTestConstants {
     }
 
     static UpdateItemCommand updateItemCommand() {
-        new UpdateItemCommand(ITEM_ID, UPDATED_TITLE, null, 0)
+        new UpdateItemCommand(ITEM_ID, UPDATED_TITLE, null, false, 0)
     }
 
     static Item item() {

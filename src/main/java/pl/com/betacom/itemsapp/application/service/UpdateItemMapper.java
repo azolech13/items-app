@@ -17,7 +17,7 @@ class UpdateItemMapper {
                 item.id(),
                 item.ownerId(),
                 command.title() == null ? item.title() : command.title(),
-                command.content(),
+                command.contentSpecified() ? command.content() : item.content(),
                 item.version(),
                 item.deleted(),
                 item.createdAt(),
