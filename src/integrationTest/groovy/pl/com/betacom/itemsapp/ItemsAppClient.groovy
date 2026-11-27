@@ -23,26 +23,32 @@ class ItemsAppClient {
         send("POST", path, body, token)
     }
 
-    HttpResponse<String> patch(String path, Map body, String token) {
+    HttpResponse<String> patch(String path, Map body, String token = null) {
         send("PATCH", path, body, token)
     }
 
-    HttpResponse<String> get(String path, String token) {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + path))
+    HttpResponse<String> get(String path, String token = null) {
+        HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(baseUrl + path))
                 .timeout(TIMEOUT)
-                .header("Authorization", "Bearer " + token)
                 .GET()
-                .build()
-        http.send(request, HttpResponse.BodyHandlers.ofString())
+        if (token != null) {
+            request.header("Authorization", "Bearer " + token)
+        }
+        http.send(request.build(), HttpResponse.BodyHandlers.ofString())
     }
 
-    HttpResponse<String> delete(String path, String token) {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + path))
+    HttpResponse<String> delete(String path, String token = null) {
+        HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(baseUrl + path))
                 .timeout(TIMEOUT)
-                .header("Authorization", "Bearer " + token)
                 .DELETE()
-                .build()
-        http.send(request, HttpResponse.BodyHandlers.ofString())
+        if (token != null) {
+            request.header("Authorization", "Bearer " + token)
+        }
+        http.send(request.build(), HttpResponse.BodyHandlers.ofString())
+    }
+
+    static JsonNode read(HttpResponse<String> response) {
+        JSON.readTree(response.body())
     }
 
     static JsonNode requireJson(HttpResponse<String> response, int expectedStatus) {

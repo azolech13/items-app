@@ -3,6 +3,8 @@ package pl.com.betacom.itemsapp
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
+import java.util.ArrayList
+import java.util.List
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.MySQLContainer
@@ -17,6 +19,7 @@ class ItemsAppEnvironment {
     private final MySQLContainer mysql
     private final ImageFromDockerfile image
     private GenericContainer app
+    private final List<GenericContainer> others = new ArrayList<>()
 
     private ItemsAppEnvironment(Network network, MySQLContainer mysql, ImageFromDockerfile image) {
         this.network = network
@@ -51,23 +54,16 @@ class ItemsAppEnvironment {
         }
     }
 
-    ItemsAppClient startApp(String name) {
+    ItemsAppClient startApp(String name, Map<String, String> extraEnv = [:]) {
         stopApp()
-        GenericContainer container = new GenericContainer(image)
-                .withNetwork(network)
-                .withEnv("SPRING_PROFILES_ACTIVE", "docker")
-                .withExposedPorts(8080)
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("items-app-" + name)).withPrefix(name))
-                .waitingFor(Wait.forHttp("/items").forStatusCode(401))
-                .withStartupTimeout(Duration.ofMinutes(3))
-        try {
-            container.start()
-            this.app = container
-            return new ItemsAppClient("http://" + container.host + ":" + container.getMappedPort(8080))
-        } catch (RuntimeException exception) {
-            closeQuietly { container.stop() }
-            throw exception
-        }
+        this.app = launch(name, extraEnv)
+        return clientFor(this.app)
+    }
+
+    ItemsAppClient startAlongside(String name) {
+        GenericContainer container = launch(name, [:])
+        others.add(container)
+        return clientFor(container)
     }
 
     void stopApp() {
@@ -79,9 +75,33 @@ class ItemsAppEnvironment {
     }
 
     void close() {
+        others.each { container -> closeQuietly { container.stop() } }
+        others.clear()
         stopApp()
         closeQuietly { mysql.stop() }
         closeQuietly { network.close() }
+    }
+
+    private GenericContainer launch(String name, Map<String, String> extraEnv) {
+        GenericContainer container = new GenericContainer(image)
+                .withNetwork(network)
+                .withEnv("SPRING_PROFILES_ACTIVE", "docker")
+                .withExposedPorts(8080)
+                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("items-app-" + name)).withPrefix(name))
+                .waitingFor(Wait.forHttp("/items").forStatusCode(401))
+                .withStartupTimeout(Duration.ofMinutes(3))
+        extraEnv.each { key, value -> container.withEnv(key, value) }
+        try {
+            container.start()
+            return container
+        } catch (RuntimeException exception) {
+            closeQuietly { container.stop() }
+            throw exception
+        }
+    }
+
+    private static ItemsAppClient clientFor(GenericContainer container) {
+        new ItemsAppClient("http://" + container.host + ":" + container.getMappedPort(8080))
     }
 
     private static Path resolveJar() {
